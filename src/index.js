@@ -1,8 +1,14 @@
 import React, { Component } from 'react';
+import DocViewFrame from './DocViewFrame';
 import './view.css';
-import {data} from './sample';
 
 class ReactGoogleDocView extends Component {
+  docData = {};
+  constructor(props) {
+    super(props);
+    this.state = {isLoading: false};
+  }
+  
   componentDidMount() {
     // window.gapi.load("client:auth2", () => {
     //   console.log('auth signing ...');
@@ -11,7 +17,6 @@ class ReactGoogleDocView extends Component {
     //     this.authenticate();
     //   })
     // });
-    console.log(data);
   }
   
   authenticate = () => {
@@ -41,9 +46,12 @@ class ReactGoogleDocView extends Component {
     return window.gapi.client.docs.documents.get({
       "documentId": this.props.documentId,
       "suggestionsViewMode": "DEFAULT_FOR_CURRENT_ACCESS"
-    }).then(function(response) {
+    }).then((response) => {
       // Handle the results here (response.result has the parsed body).
       console.log("Response", response);
+      this.docData = response;
+      this.setState({isLoading: false});
+      console.log(this.docData);
     }, (err) => {
       console.error("Execute error", err);
     });
@@ -56,6 +64,13 @@ class ReactGoogleDocView extends Component {
         <p>client id: {this.props.clientId}</p>
         <p>api key: {this.props.apiKey}</p>
         <p>doc id: {this.props.documentId}</p>
+        {/*<iframe style={{width: '90vw', height: '100vh', margin: '0 auto'}} src={`https://docs.google.com/document/d/` + this.props.documentId + `/edit?usp=sharing`}/>*/}
+        {this.state.isLoading && <p>Loading ...</p>}
+        {!this.state.isLoading &&
+          <div>
+            <DocViewFrame data={this.docData}/>
+          </div>
+        }
       </div>
     )
   }
