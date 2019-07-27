@@ -1,53 +1,51 @@
 import React, { Component } from 'react';
 import './view.css';
-
-let DISCOVERY_DOCS = ['https://docs.googleapis.com/$discovery/rest?version=v1&key=AIzaSyDFmA7ocmXeYPu5bn2fhvJ-vYMSzvZWZFY'];
-// Authorization scopes required by the API; multiple scopes can be
-// included, separated by spaces.
-let SCOPES = "https://www.googleapis.com/auth/documents.readonly";
+import {data} from './sample';
 
 class ReactGoogleDocView extends Component {
   componentDidMount() {
-    this.handleClientLoad();
+    // window.gapi.load("client:auth2", () => {
+    //   console.log('auth signing ...');
+    //   window.gapi.auth2.init({client_id: this.props.clientId}).then(() => {
+    //     console.log('init client!');
+    //     this.authenticate();
+    //   })
+    // });
+    console.log(data);
   }
   
-  handleClientLoad() {
-    // window.gapi && window.gapi.load('client:auth2', initClient);
-    window.gapi.load('client:auth2', this.initClient);
-  }
-  
-  initClient = () => {
-    console.log('init client...');
-    window.gapi.client.init({
-      apiKey: this.props.apiKey,
-      clientId: this.props.clientId,
-      discoveryDocs: DISCOVERY_DOCS,
-      scope: SCOPES
-    }).then(() => {
-      this.getDocContent();
-      // Listen for sign-in state changes.
-      // window.gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-      
-      // Handle the initial sign-in state.
-      // updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-      // authorizeButton.onclick = handleAuthClick;
-      // signoutButton.onclick = handleSignoutClick;
-    }, function(error) {
-      console.log(JSON.stringify(error, null, 2));
-    });
+  authenticate = () => {
+    return window.gapi.auth2.getAuthInstance()
+      .signIn({scope: "https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/documents.readonly https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly"})
+      .then(() => {
+        console.log("Sign-in successful");
+        this.loadClient();
+      }, function(err) {
+        console.error("Error signing in", err);
+      });
   };
   
-  getDocContent = () => {
-    console.log('getting doc content...');
-    window.gapi.client.docs.documents.get({
-      documentId: this.props.documentId
-    }).then((response) => {
-      let doc = response.result;
-      let title = doc.title;
-      console.log(doc);
-      console.log(title);
-    },function(response) {
-      console.log(response.result.error.message);
+  loadClient = () => {
+    window.gapi.client.setApiKey(this.props.apiKey);
+    return window.gapi.client.load("https://content.googleapis.com/discovery/v1/apis/docs/v1/rest")
+      .then(() => {
+        console.log("GAPI client loaded for API");
+        this.execute();
+      }, (err) => {
+        console.error("Error loading GAPI client for API", err);
+      });
+  };
+  
+  // Make sure the client is loaded and sign-in is complete before calling this method.
+  execute = () => {
+    return window.gapi.client.docs.documents.get({
+      "documentId": this.props.documentId,
+      "suggestionsViewMode": "DEFAULT_FOR_CURRENT_ACCESS"
+    }).then(function(response) {
+      // Handle the results here (response.result has the parsed body).
+      console.log("Response", response);
+    }, (err) => {
+      console.error("Execute error", err);
     });
   };
   
