@@ -5,17 +5,18 @@ import {getBorderStyle, getTextStyle} from "./GetStyle";
 class DocViewFrame extends Component {
   constructor(props) {
     super(props);
-    // elementArr = this.props.data.result.body.content;
-    // documentStyle = this.props.data.result.documentStyle;
-    // namedStyle = this.props.data.result.namedStyle;
-    // inlineObjects = this.props.data.result.inlineObjects;
-    // lists = this.props.data.result.lists;
-    this.elementArr = data1.body.content;
-    this.documentStyle = data1.documentStyle;
-    this.namedStyles = data1.namedStyles.styles;
-    this.inlineObjects = data1.inlineObjects;
-    this.lists = data1.lists;
-    this.frameStyle = {};
+    console.log(this.props.data);
+    this.elementArr = this.props.data.result.body.content;
+    this.documentStyle = this.props.data.result.documentStyle;
+    this.namedStyles = this.props.data.result.namedStyles.styles;
+    this.inlineObjects = this.props.data.result.inlineObjects;
+    this.lists = this.props.data.result.lists;
+    // this.elementArr = data1.body.content;
+    // this.documentStyle = data1.documentStyle;
+    // this.namedStyles = data1.namedStyles.styles;
+    // this.inlineObjects = data1.inlineObjects;
+    // this.lists = data1.lists;
+    // this.frameStyle = {};
   }
   
   componentDidMount() {
@@ -222,7 +223,7 @@ class DocViewFrame extends Component {
   renderParagraph = (paragraph) => {
     const {elements, paragraphStyle, bullet} = paragraph;
     const style = {};
-
+    
     if (paragraphStyle.namedStyleType && this.namedStyles[paragraphStyle.namedStyleType]) {
       // getting named style
       let {textStyle, paraStyle} = this.namedStyles[paragraphStyle.namedStyleType];
@@ -289,21 +290,24 @@ class DocViewFrame extends Component {
       let magnitude = (paragraphStyle.indentFirstLine.magnitude || 0) + paragraphStyle.indentFirstLine.unit;
     }
     if (paragraphStyle.indentStart && paragraphStyle.indentStart.magnitude && paragraphStyle.indentStart.unit) {
-      style.marginLeft = (paragraphStyle.indentStart.magnitude || 0) + paragraphStyle.indentStart.unit;
+      style.paddingLeft = (paragraphStyle.indentStart.magnitude || 0) + paragraphStyle.indentStart.unit;
     }
     if (paragraphStyle.headingId) {
     
     }
     let domBullet = null;
+    
     if (bullet) {
       const {listId, textStyle} = bullet;
       let bulletObj = this.lists[listId];
       let bulletStyle = {};
       bulletObj = bulletObj.listProperties.nestingLevels[0];
-      // if (bulletObj.indentStart) {
-      //
-      // }
-      domBullet = <span>●</span>;
+      if (bulletObj.indentFirstLine) {
+        // bulletStyle.marginLeft = bulletObj.indentFirstLine.magnitude + bulletObj.indentFirstLine.unit;
+        bulletStyle.marginLeft = '-20pt';
+        bulletStyle.marginRight = '12pt';
+      }
+      domBullet = <span style={bulletStyle}>●</span>;
     }
     
     return (

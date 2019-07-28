@@ -6,17 +6,17 @@ class ReactGoogleDocView extends Component {
   docData = {};
   constructor(props) {
     super(props);
-    this.state = {isLoading: false};
+    this.state = {isLoading: true};
   }
   
   componentDidMount() {
-    // window.gapi.load("client:auth2", () => {
-    //   console.log('auth signing ...');
-    //   window.gapi.auth2.init({client_id: this.props.clientId}).then(() => {
-    //     console.log('init client!');
-    //     this.authenticate();
-    //   })
-    // });
+    window.gapi.load("client:auth2", () => {
+      console.log('auth signing ...');
+      window.gapi.auth2.init({client_id: this.props.clientId}).then(() => {
+        console.log('init client!');
+        this.authenticate();
+      })
+    });
   }
   
   authenticate = () => {
