@@ -67,7 +67,7 @@ class ReactGoogleDocView extends Component {
         {/*<iframe style={{width: '90vw', height: '100vh', margin: '0 auto'}} src={`https://docs.google.com/document/d/` + this.props.documentId + `/edit?usp=sharing`}/>*/}
         {this.state.isLoading && <p>Loading ...</p>}
         {!this.state.isLoading &&
-          <div>
+          <div className='doc-view-container'>
             <DocViewFrame data={this.docData}/>
           </div>
         }
