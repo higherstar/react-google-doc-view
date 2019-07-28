@@ -68,7 +68,9 @@ class ReactGoogleDocView extends Component {
         {this.state.isLoading && <p>Loading ...</p>}
         {!this.state.isLoading &&
           <div className='doc-view-container'>
-            <DocViewFrame data={this.docData}/>
+            <div className='page-container'>
+              <DocViewFrame data={this.docData}/>
+            </div>
           </div>
         }
       </div>

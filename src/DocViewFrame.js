@@ -1,5 +1,6 @@
 import React, {Component} from "react";
 import {data1} from "./sample";
+import {getBorderStyle, getTextStyle} from "./GetStyle";
 
 class DocViewFrame extends Component {
   constructor(props) {
@@ -31,7 +32,6 @@ class DocViewFrame extends Component {
         paraStyle: item.paragraphStyle
       };
     });
-    console.log(namedStyles);
     this.namedStyles = namedStyles;
   };
   
@@ -47,19 +47,19 @@ class DocViewFrame extends Component {
     }
     if (marginTop) {
       const {magnitude, unit} = marginTop;
-      tempStyle.paddingTop = magnitude + unit;
+      tempStyle.marginTop = magnitude + unit;
     }
     if (marginBottom) {
       const {magnitude, unit} = marginBottom;
-      tempStyle.paddingBottom = magnitude + unit;
+      tempStyle.marginBottom = magnitude + unit;
     }
     if (marginLeft) {
       const {magnitude, unit} = marginLeft;
-      tempStyle.paddingLeft = magnitude + unit;
+      tempStyle.marginLeft = magnitude + unit;
     }
     if (marginRight) {
       const {magnitude, unit} = marginRight;
-      tempStyle.paddingRight = magnitude + unit;
+      tempStyle.marginRight = magnitude + unit;
     }
     if (pageSize) {
       const {height, width} = pageSize;
@@ -69,58 +69,16 @@ class DocViewFrame extends Component {
       }
       if (width) {
         const {magnitude, unit} = width;
-        tempStyle.width = magnitude + unit;
+        tempStyle.width = (magnitude - (marginLeft.magnitude || 0) - (marginRight.magnitude || 0)) + unit;
       }
     }
     this.frameStyle = tempStyle;
   };
   
-  // get border style of paragraph
-  getBorderStyle = (border) => {
-    const {color, width, dashStyle} = border;
-    const rgbColor = color.color.rgbColor;
-    return dashStyle + ' ' + width.magnitude + width.unit + 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
-  };
-  
-  getTextStyle = (textStyle) => {
-    let style = {};
-    if (textStyle.bold) {
-      style.fontWeight = 'bold';
-    }
-    if (textStyle.fontSize && textStyle.fontSize !== {}) {
-      style.fontSize = textStyle.fontSize.magnitude + textStyle.fontSize.unit;
-    }
-    if (textStyle.foregroundColor && textStyle.foregroundColor !== {}) {
-      let rgbColor = textStyle.foregroundColor.color.rgbColor;
-      style.color = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
-    }
-    if (textStyle.backgroundColor && textStyle.backgroundColor !== {}) {
-      let rgbColor = textStyle.backgroundColor.color.rgbColor;
-      style.backgroundColor = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
-    }
-    if (textStyle.underline) {
-      style.textDecoration = 'underline';
-    }
-    if (textStyle.underline) {
-      style.fontStyle = 'italic';
-    }
-    if (textStyle.strikethrough) {
-      style.textDecoration = 'line-through';
-    }
-    if (textStyle.weightedFontFamily && textStyle.weightedFontFamily !== {}) {
-      style.fontFamily = textStyle.weightedFontFamily.fontFamily;
-      style.fontWeight = textStyle.weightedFontFamily.fontWeight;
-    }
-    if (textStyle.baselineOffset) {
-      // baselineOffset
-    }
-    return style;
-  };
-  
   renderTextElement = (textElement) => {
     const {content, textStyle} = textElement;
     let renderElement = null;
-    let style = this.getTextStyle(textStyle);
+    let style = getTextStyle(textStyle);
     
     if (textStyle.link && textStyle.link !== {}) {
       renderElement = <a href={textStyle.link.url} style={style}>{content}</a>;
@@ -131,7 +89,6 @@ class DocViewFrame extends Component {
   };
   
   renderObjectElement = (objElement) => {
-    // console.log(ObjElement);
     if (objElement.inlineObjectId) {
       const {inlineObjectId, textStyle} = objElement;
       let object = this.inlineObjects[inlineObjectId].inlineObjectProperties.embeddedObject;
@@ -139,14 +96,14 @@ class DocViewFrame extends Component {
       let src = null;
   
       if (textStyle) {
-        objStyle = this.getTextStyle(textStyle);
+        objStyle = getTextStyle(textStyle);
       }
       if (object.imageProperties) {
         src = object.imageProperties.contentUri;
         let cropProperties = object.imageProperties.cropProperties;
       }
       if (object.embeddedObjectBorder) {
-        // this.getBorderStyle(object.embeddedObjectBorder);
+        // getBorderStyle(object.embeddedObjectBorder);
         console.log(object.embeddedObjectBorder.propertyState === 'NOT_RENDERED');
       }
       if (object.size) {
@@ -165,7 +122,7 @@ class DocViewFrame extends Component {
       if (object.marginRight && object.marginRight.magnitude) {
         objStyle.marginRight = object.marginRight.magnitude + object.marginRight.unit;
       }
-      return <img src={src} style={objStyle} />
+      return <img src={src} style={objStyle} />;
     } else {
       return null;
     }
@@ -180,9 +137,86 @@ class DocViewFrame extends Component {
     }
   };
   
+  renderTableCell = (tableCell, columnStyle) => {
+    const {content, tableCellStyle} = tableCell;
+    let style = columnStyle;
+    style.border = 'solid 1px black';
+    if (tableCellStyle.rowSpan) {
+      style.rowspan = tableCellStyle.rowSpan;
+    }
+    if (tableCellStyle.columnSpan) {
+      style.colspan = tableCellStyle.columnSpan;
+    }
+    if (tableCellStyle.contentAlignment) {
+      style.verticalAlign = tableCellStyle.contentAlignment;
+    }
+    if (tableCellStyle.backgroundColor && tableCellStyle.backgroundColor.color) {
+      let rgbColor = tableCellStyle.backgroundColor.color.rgbColor;
+      style.backgroundColor = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    if (tableCellStyle.paddingLeft) {
+      style.paddingLeft = tableCellStyle.paddingLeft.magnitude + tableCellStyle.paddingLeft.unit;
+    }
+    if (tableCellStyle.paddingRight) {
+      style.paddingRight = tableCellStyle.paddingRight.magnitude + tableCellStyle.paddingRight.unit;
+    }
+    if (tableCellStyle.paddingTop) {
+      style.paddingTop = tableCellStyle.paddingTop.magnitude + tableCellStyle.paddingTop.unit;
+    }
+    if (tableCellStyle.paddingBottom) {
+      style.paddingBottom = tableCellStyle.paddingBottom.magnitude + tableCellStyle.paddingBottom.unit;
+    }
+    if (tableCellStyle.borderLeft && tableCellStyle.borderLeft.width) {
+      let rgbColor = tableCellStyle.borderLeft.color.color.rgbColor;
+      style.borderLeft = tableCellStyle.borderLeft.dashStyle + ' ' + tableCellStyle.borderLeft.width.magnitude + tableCellStyle.borderLeft.width.unit + ' ' + 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    if (tableCellStyle.borderRight && tableCellStyle.borderRight.width) {
+      let rgbColor = tableCellStyle.borderRight.color.color.rgbColor;
+      style.borderRight = tableCellStyle.borderRight.dashStyle + ' ' + tableCellStyle.borderRight.width.magnitude + tableCellStyle.borderRight.width.unit + ' ' + 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    if (tableCellStyle.borderTop && tableCellStyle.borderTop.width) {
+      let rgbColor = tableCellStyle.borderTop.color.color.rgbColor;
+      style.borderTop = tableCellStyle.borderTop.dashStyle + ' ' + tableCellStyle.borderTop.width.magnitude + tableCellStyle.borderTop.width.unit + ' ' + 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    if (tableCellStyle.borderBottom && tableCellStyle.borderBottom.width) {
+      let rgbColor = tableCellStyle.borderBottom.color.color.rgbColor;
+      style.borderBottom = tableCellStyle.borderBottom.dashStyle + ' ' + tableCellStyle.borderBottom.width.magnitude + tableCellStyle.borderBottom.width.unit + ' ' + 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    
+    return <td style={style}>{content.map(item => this.renderParagraph(item.paragraph))}</td>;
+  };
+  
+  renderTableRow = (tableRow, columnStyles) => {
+    const {tableCells, tableRowStyle} = tableRow;
+    let style = {};
+    if (tableRowStyle.minRowHeight && tableRowStyle.minRowHeight.magnitude) {
+      style.minHeight = tableRowStyle.minRowHeight.magnitude + tableRowStyle.minRowHeight.unit;
+    }
+    return <tr style={style}>
+      {tableCells.map((tableCell, i) => this.renderTableCell(tableCell, columnStyles[i]))}
+    </tr>;
+  };
+  
   renderTableElement = (tableElement) => {
-    console.log("*********************");
-    console.log(tableElement);
+    const {rows, columns, tableRows, tableStyle} = tableElement;
+    let columnStyles = [];
+    if (tableStyle.tableColumnProperties) {
+      tableStyle.tableColumnProperties.forEach(columnStyle => {
+        let tempStyle = {};
+        if (columnStyle.widthType) {
+        
+        }
+        if (columnStyle.width) {
+          tempStyle.width = columnStyle.width.magnitude + columnStyle.width.unit;
+        }
+        columnStyles.push(tempStyle);
+      });
+    }
+    if (rows > 0) {
+      return <table style={{borderSpacing: 'unset', margin: '0 auto'}}>
+        <tbody>{tableRows.map(tableRow => this.renderTableRow(tableRow, columnStyles))}</tbody>
+      </table>;
+    }
   };
 
   renderParagraph = (paragraph) => {
@@ -209,19 +243,19 @@ class DocViewFrame extends Component {
       }
       if (paraStyle.borderTop) {
         if (paraStyle.borderTop.width && paraStyle.borderTop.width.magnitude)
-          style.borderTop = this.getBorderStyle(paraStyle.borderTop);
+          style.borderTop = getBorderStyle(paraStyle.borderTop);
       }
       if (paraStyle.borderBottom) {
         if (paraStyle.borderBottom.width && paraStyle.borderBottom.width.magnitude)
-          style.borderBottom = this.getBorderStyle(paraStyle.borderBottom);
+          style.borderBottom = getBorderStyle(paraStyle.borderBottom);
       }
       if (paraStyle.borderLeft) {
         if (paraStyle.borderLeft.width && paraStyle.borderLeft.width.magnitude)
-          style.borderLeft = this.getBorderStyle(paraStyle.borderLeft);
+          style.borderLeft = getBorderStyle(paraStyle.borderLeft);
       }
       if (paraStyle.borderRight) {
         if (paraStyle.borderRight.width && paraStyle.borderRight.width.magnitude)
-          style.borderRight = this.getBorderStyle(paraStyle.borderRight);
+          style.borderRight = getBorderStyle(paraStyle.borderRight);
       }
     }
     if (paragraphStyle.lineSpacing) {
@@ -255,17 +289,26 @@ class DocViewFrame extends Component {
       let magnitude = (paragraphStyle.indentFirstLine.magnitude || 0) + paragraphStyle.indentFirstLine.unit;
     }
     if (paragraphStyle.indentStart && paragraphStyle.indentStart.magnitude && paragraphStyle.indentStart.unit) {
-      let magnitude = (paragraphStyle.indentStart.magnitude || 0) + paragraphStyle.indentStart.unit;
+      style.marginLeft = (paragraphStyle.indentStart.magnitude || 0) + paragraphStyle.indentStart.unit;
     }
     if (paragraphStyle.headingId) {
     
     }
+    let domBullet = null;
     if (bullet) {
       const {listId, textStyle} = bullet;
+      let bulletObj = this.lists[listId];
+      let bulletStyle = {};
+      bulletObj = bulletObj.listProperties.nestingLevels[0];
+      // if (bulletObj.indentStart) {
+      //
+      // }
+      domBullet = <span>●</span>;
     }
     
     return (
       <div style={style}>
+        {domBullet}
         {elements.map(element => this.renderDocElement(element))}
       </div>
     )
@@ -275,9 +318,7 @@ class DocViewFrame extends Component {
     const containerStartIndex = elementContainer.startIndex;
     const containerEndIndex = elementContainer.endIndex;
     if (elementContainer.table) {
-      return null;
-      // elementContainer.table
-      // return this.renderTableElement(elementContainer.table);
+      return this.renderTableElement(elementContainer.table);
     } else if (elementContainer.paragraph) {
       return this.renderParagraph(elementContainer.paragraph);
     } else {
