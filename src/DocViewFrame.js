@@ -19,7 +19,21 @@ class DocViewFrame extends Component {
   
   componentDidMount() {
     this.getFrameStyle();
+    this.getNamedStyle();
+    this.forceUpdate();
   }
+  
+  getNamedStyle = () => {
+    let namedStyles = {};
+    this.namedStyles.forEach(item => {
+      namedStyles[item.namedStyleType] = {
+        textStyle: item.textStyle,
+        paraStyle: item.paragraphStyle
+      };
+    });
+    console.log(namedStyles);
+    this.namedStyles = namedStyles;
+  };
   
   getFrameStyle = () => {
     const {background, pageNumberStart, marginTop, marginBottom, marginRight, marginLeft, pageSize} = this.documentStyle;
@@ -59,48 +73,55 @@ class DocViewFrame extends Component {
       }
     }
     this.frameStyle = tempStyle;
-    this.forceUpdate();
+  };
+  
+  // get border style of paragraph
+  getBorderStyle = (border) => {
+    const {color, width, dashStyle} = border;
+    const rgbColor = color.color.rgbColor;
+    return dashStyle + ' ' + width.magnitude + width.unit + 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+  };
+  
+  getTextStyle = (textStyle) => {
+    let style = {};
+    if (textStyle.bold) {
+      style.fontWeight = 'bold';
+    }
+    if (textStyle.fontSize && textStyle.fontSize !== {}) {
+      style.fontSize = textStyle.fontSize.magnitude + textStyle.fontSize.unit;
+    }
+    if (textStyle.foregroundColor && textStyle.foregroundColor !== {}) {
+      let rgbColor = textStyle.foregroundColor.color.rgbColor;
+      style.color = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    if (textStyle.backgroundColor && textStyle.backgroundColor !== {}) {
+      let rgbColor = textStyle.backgroundColor.color.rgbColor;
+      style.backgroundColor = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
+    }
+    if (textStyle.underline) {
+      style.textDecoration = 'underline';
+    }
+    if (textStyle.underline) {
+      style.fontStyle = 'italic';
+    }
+    if (textStyle.strikethrough) {
+      style.textDecoration = 'line-through';
+    }
+    if (textStyle.weightedFontFamily && textStyle.weightedFontFamily !== {}) {
+      style.fontFamily = textStyle.weightedFontFamily.fontFamily;
+      style.fontWeight = textStyle.weightedFontFamily.fontWeight;
+    }
+    if (textStyle.baselineOffset) {
+      // baselineOffset
+    }
+    return style;
   };
   
   renderTextElement = (textElement) => {
-    console.log(textElement);
     const {content, textStyle} = textElement;
-    const keyArr = Object.keys(textStyle);
-    let style = {};
     let renderElement = null;
+    let style = this.getTextStyle(textStyle);
     
-    keyArr.forEach(styleItem => {
-      if (styleItem === 'bold' && textStyle.bold) {
-        style.fontWeight = 'bold';
-      }
-      if (styleItem === 'fontSize' && textStyle.fontSize !== {}) {
-        style.fontSize = textStyle.fontSize.magnitude + textStyle.fontSize.unit;
-      }
-      if (styleItem === 'foregroundColor' && textStyle.foregroundColor !== {}) {
-        let rgbColor = textStyle.foregroundColor.color.rgbColor;
-        style.color = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
-      }
-      if (styleItem === 'backgroundColor' && textStyle.backgroundColor !== {}) {
-        let rgbColor = textStyle.backgroundColor.color.rgbColor;
-        style.backgroundColor = 'rgb(' + (rgbColor.red || 0)*255 + ',' + (rgbColor.green || 0)*255 + ',' + (rgbColor.blue || 0)*255 + ')';
-      }
-      if (styleItem === 'underline' && textStyle.underline) {
-        style.textDecoration = 'underline';
-      }
-      if (styleItem === 'italic' && textStyle.underline) {
-        style.fontStyle = 'italic';
-      }
-      if (styleItem === 'strikethrough' && textStyle.strikethrough) {
-        style.textDecoration = 'line-through';
-      }
-      if (styleItem === 'weightedFontFamily' && textStyle.weightedFontFamily !== {}) {
-        style.fontFamily = textStyle.weightedFontFamily.fontFamily;
-        style.fontWeight = textStyle.weightedFontFamily.fontWeight;
-      }
-      if (styleItem === 'baselineOffset') {
-        // baselineOffset
-      }
-    });
     if (textStyle.link && textStyle.link !== {}) {
       renderElement = <a href={textStyle.link.url} style={style}>{content}</a>;
     } else {
@@ -111,15 +132,51 @@ class DocViewFrame extends Component {
   
   renderObjectElement = (objElement) => {
     // console.log(ObjElement);
+    if (objElement.inlineObjectId) {
+      const {inlineObjectId, textStyle} = objElement;
+      let object = this.inlineObjects[inlineObjectId].inlineObjectProperties.embeddedObject;
+      let objStyle = {};
+      let src = null;
+  
+      if (textStyle) {
+        objStyle = this.getTextStyle(textStyle);
+      }
+      if (object.imageProperties) {
+        src = object.imageProperties.contentUri;
+        let cropProperties = object.imageProperties.cropProperties;
+      }
+      if (object.embeddedObjectBorder) {
+        // this.getBorderStyle(object.embeddedObjectBorder);
+        console.log(object.embeddedObjectBorder.propertyState === 'NOT_RENDERED');
+      }
+      if (object.size) {
+        objStyle.height = object.size.height.magnitude + object.size.height.unit;
+        objStyle.width = object.size.width.magnitude + object.size.width.unit;
+      }
+      if (object.marginTop && object.marginTop.magnitude) {
+        objStyle.marginTop = object.marginTop.magnitude + object.marginTop.unit;
+      }
+      if (object.marginBottom && object.marginBottom.magnitude) {
+        objStyle.marginBottom = object.marginBottom.magnitude + object.marginBottom.unit;
+      }
+      if (object.marginLeft && object.marginLeft.magnitude) {
+        objStyle.marginLeft = object.marginLeft.magnitude + object.marginLeft.unit;
+      }
+      if (object.marginRight && object.marginRight.magnitude) {
+        objStyle.marginRight = object.marginRight.magnitude + object.marginRight.unit;
+      }
+      return <img src={src} style={objStyle} />
+    } else {
+      return null;
+    }
   };
   
   renderDocElement = (element) => {
-    const {endIndex, startIndex, textRun} = element;
-    if (!textRun) {
-      const {inlineObjectElement} = element;
-      return this.renderObjectElement(inlineObjectElement);
-    } else {
-      return this.renderTextElement(textRun);
+    const {endIndex, startIndex} = element;
+    if (element.inlineObjectElement) {
+      return this.renderObjectElement(element.inlineObjectElement);
+    } else if(element.textRun) {
+      return this.renderTextElement(element.textRun);
     }
   };
   
@@ -129,9 +186,44 @@ class DocViewFrame extends Component {
   };
 
   renderParagraph = (paragraph) => {
-    const {elements, paragraphStyle} = paragraph;
+    const {elements, paragraphStyle, bullet} = paragraph;
     const style = {};
-    
+
+    if (paragraphStyle.namedStyleType && this.namedStyles[paragraphStyle.namedStyleType]) {
+      // getting named style
+      let {textStyle, paraStyle} = this.namedStyles[paragraphStyle.namedStyleType];
+      if (paraStyle.alignment === 'START') {
+      
+      }
+      if (paraStyle.direction === 'LEFT_TO_RIGHT') {
+      
+      }
+      if (paraStyle.spacingMode === 'NEVER_COLLAPSE') {
+      
+      }
+      if (paraStyle.spaceAbove && paraStyle.spaceAbove.magnitude && paraStyle.spaceAbove.unit) {
+        style.marginTop = paraStyle.spaceAbove.magnitude + paraStyle.spaceAbove.unit;
+      }
+      if (paraStyle.spaceBelow && paraStyle.spaceBelow.magnitude && paraStyle.spaceBelow.unit) {
+        style.marginBottom = paraStyle.spaceBelow.magnitude + paraStyle.spaceBelow.unit;
+      }
+      if (paraStyle.borderTop) {
+        if (paraStyle.borderTop.width && paraStyle.borderTop.width.magnitude)
+          style.borderTop = this.getBorderStyle(paraStyle.borderTop);
+      }
+      if (paraStyle.borderBottom) {
+        if (paraStyle.borderBottom.width && paraStyle.borderBottom.width.magnitude)
+          style.borderBottom = this.getBorderStyle(paraStyle.borderBottom);
+      }
+      if (paraStyle.borderLeft) {
+        if (paraStyle.borderLeft.width && paraStyle.borderLeft.width.magnitude)
+          style.borderLeft = this.getBorderStyle(paraStyle.borderLeft);
+      }
+      if (paraStyle.borderRight) {
+        if (paraStyle.borderRight.width && paraStyle.borderRight.width.magnitude)
+          style.borderRight = this.getBorderStyle(paraStyle.borderRight);
+      }
+    }
     if (paragraphStyle.lineSpacing) {
       style.lineHeight = paragraphStyle.lineSpacing/100;
     }
@@ -154,14 +246,10 @@ class DocViewFrame extends Component {
     
     }
     if (paragraphStyle.keepWithNext) {
-    
+      // display paragraph in one page
     }
     if (paragraphStyle.avoidWidowAndOrphan) {
-    
-    }
-    if (paragraphStyle.namedStyleType) {
-      // getting named style
-      // let namedStyle = this.namedStyle[paragraphStyle.namedStyleType];
+      // paragraph opening, ending lines control
     }
     if (paragraphStyle.indentFirstLine && paragraphStyle.indentFirstLine && paragraphStyle.indentFirstLine.unit) {
       let magnitude = (paragraphStyle.indentFirstLine.magnitude || 0) + paragraphStyle.indentFirstLine.unit;
@@ -171,6 +259,9 @@ class DocViewFrame extends Component {
     }
     if (paragraphStyle.headingId) {
     
+    }
+    if (bullet) {
+      const {listId, textStyle} = bullet;
     }
     
     return (
@@ -195,8 +286,6 @@ class DocViewFrame extends Component {
   };
   
   render() {
-    console.log(data1);
-    console.log(this.namedStyles);
     
     return (
       <div className='doc-view-frame' style={this.frameStyle}>
