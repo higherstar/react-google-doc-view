@@ -1,5 +1,5 @@
 # How to use this component
-
+```
 ...
 import ReactGoogleDocView from './react-google-doc-view';
 ...
@@ -19,3 +19,4 @@ render() {
     </div>
   )
 }
+```
