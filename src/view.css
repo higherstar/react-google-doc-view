@@ -1,12 +1,9 @@
-h2 {
-  color: red;
-}
-
 .doc-view-container {
   display: flex;
   justify-content: center;
   background-color: #eee;
   padding-top: 3rem;
+  text-align: left;
 }
 
 .page-container {
