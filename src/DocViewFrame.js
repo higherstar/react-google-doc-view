@@ -1,11 +1,9 @@
 import React, {Component} from "react";
-// import {data1} from "./sample";
 import {getFrameStyle, getNamedStyle, getBorderStyle, getTextStyle} from "./GetStyle";
 
 class DocViewFrame extends Component {
   constructor(props) {
     super(props);
-    console.log(this.props.data);
     this.elementArr = this.props.data.result.body.content;
     this.documentStyle = this.props.data.result.documentStyle;
     this.namedStyles = this.props.data.result.namedStyles.styles;
@@ -16,14 +14,67 @@ class DocViewFrame extends Component {
     // this.namedStyles = data1.namedStyles.styles;
     // this.inlineObjects = data1.inlineObjects;
     // this.lists = data1.lists;
-    // this.frameStyle = {};
   }
   
   componentDidMount() {
     this.frameStyle = getFrameStyle(this.documentStyle);
     this.namedStyles = getNamedStyle(this.namedStyles);
-    this.forceUpdate();
+    this.getSectionBlocks();
   }
+  
+  getSectionBlocks = () => {
+    let curBlock = '';
+    let curType = 2;  // start with slide section
+    let curTitle = '';
+    let sectionBlocks = [];
+    this.elementArr.forEach((element, key) => {
+      let tempBlock = this.renderElements(element, key);
+      let elementStr = element.paragraph ? JSON.stringify(element.paragraph.elements) : '';
+      
+      if (tempBlock) {
+        if (elementStr.indexOf('[VIDEOHEADER]') >= 0) {
+          // video section start
+          curType = 0;
+          curBlock = '';
+        } else if (elementStr.indexOf('[VIDEOBOTTOM]') >= 0) {
+          // video section end
+          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
+          curBlock = '';
+          curTitle = '';
+        } else if (elementStr.indexOf('[QUESTIONHEADER]') >= 0) {
+          // question section start
+          curType = 1;
+          curBlock = '';
+        } else if (elementStr.indexOf('[QUESTIONBOTTOM]') >= 0) {
+          // question section end
+          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
+          curBlock = '';
+          curTitle = '';
+        } else if (elementStr.indexOf('[SLIDECUT]') >= 0) {
+          // end of section - video, question, slide
+          if (curType === 2) {
+            // this is the end of slide section
+            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'slide'}];
+          } else if (curType === 0) {
+            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
+          } else if (curType === 1) {
+            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
+          }
+          curTitle = '';
+          curType = 2;  // type initialize
+        } else {
+          if (curTitle === '') {
+            // this is the start of new section - catch section title here
+            if (element.paragraph) {
+              curTitle = element.paragraph.elements[0].textRun && element.paragraph.elements[0].textRun.content;
+            }
+          }
+          curBlock = [...curBlock, tempBlock];
+        }
+      }
+    });
+    this.props.getSections({sectionBlocks, docFrameStyle: this.frameStyle});
+  };
   
   renderTextElement = (textElement, key) => {
     const {content, textStyle} = textElement;
@@ -50,11 +101,8 @@ class DocViewFrame extends Component {
       }
       if (object.imageProperties) {
         src = object.imageProperties.contentUri;
-        // let cropProperties = object.imageProperties.cropProperties;
       }
       if (object.embeddedObjectBorder) {
-        // getBorderStyle(object.embeddedObjectBorder);
-        // console.log(object.embeddedObjectBorder.propertyState === 'NOT_RENDERED');
       }
       if (object.size) {
         objStyle.height = object.size.height.magnitude + object.size.height.unit;
@@ -271,11 +319,7 @@ class DocViewFrame extends Component {
   };
   
   render() {
-    return (
-      <div className='doc-view-frame' style={this.frameStyle}>
-        {this.elementArr.map((element, key) => this.renderElements(element, key))}
-      </div>
-    )
+    return null;
   }
 }
 

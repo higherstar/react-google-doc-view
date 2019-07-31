@@ -10,7 +10,7 @@ class ReactGoogleDocView extends Component {
   }
   
   componentDidMount() {
-    window.gapi.load("client:auth2", () => {
+    window.gapi.load('client:auth2', () => {
       console.log('auth signing ...');
       window.gapi.auth2.init({client_id: this.props.clientId}).then(() => {
         console.log('init client!');
@@ -21,55 +21,49 @@ class ReactGoogleDocView extends Component {
   
   authenticate = () => {
     return window.gapi.auth2.getAuthInstance()
-      .signIn({scope: "https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/documents.readonly https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly"})
+      .signIn({scope: 'https://www.googleapis.com/auth/documents https://www.googleapis.com/auth/documents.readonly https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly'})
       .then(() => {
-        console.log("Sign-in successful");
+        console.log('Sign-in successful');
         this.loadClient();
       }, function(err) {
-        console.error("Error signing in", err);
+        console.error('Error signing in', err);
       });
   };
   
   loadClient = () => {
     window.gapi.client.setApiKey(this.props.apiKey);
-    return window.gapi.client.load("https://content.googleapis.com/discovery/v1/apis/docs/v1/rest")
+    return window.gapi.client.load('https://content.googleapis.com/discovery/v1/apis/docs/v1/rest')
       .then(() => {
-        console.log("GAPI client loaded for API");
+        console.log('GAPI client loaded for API');
         this.execute();
       }, (err) => {
-        console.error("Error loading GAPI client for API", err);
+        console.error('Error loading GAPI client for API', err);
       });
   };
   
   execute = () => {
     return window.gapi.client.docs.documents.get({
-      "documentId": this.props.documentId,
-      "suggestionsViewMode": "DEFAULT_FOR_CURRENT_ACCESS"
+      'documentId': this.props.documentId,
+      'suggestionsViewMode': 'DEFAULT_FOR_CURRENT_ACCESS'
     }).then((response) => {
       this.docData = response;
       this.setState({isLoading: false});
-      console.log(this.docData);
     }, (err) => {
-      console.error("Execute error", err);
+      console.error('Execute error', err);
     });
   };
   
   render() {
     return (
-      <div>
-        <h2>React Google Doc View</h2>
-        <p>client id: {this.props.clientId}</p>
-        <p>api key: {this.props.apiKey}</p>
-        <p>doc id: {this.props.documentId}</p>
+      <React.Fragment>
         {this.state.isLoading && <p>Loading ...</p>}
         {!this.state.isLoading &&
-          <div className='doc-view-container'>
-            <div className='page-container'>
-              <DocViewFrame data={this.docData}/>
-            </div>
-          </div>
+          <DocViewFrame
+            data={this.docData}
+            getSections={this.props.getSections}
+          />
         }
-      </div>
+      </React.Fragment>
     )
   }
 }
