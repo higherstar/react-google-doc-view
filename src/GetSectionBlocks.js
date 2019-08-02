@@ -1,82 +1,20 @@
-import React, {Component} from "react";
-import {getFrameStyle, getNamedStyle, getBorderStyle, getTextStyle} from "./GetStyle";
+import React from "react";
+import { getFrameStyle, getNamedStyle, getBorderStyle, getTextStyle } from "./GetStyle";
 
-class DocViewFrame extends Component {
-  constructor(props) {
-    super(props);
-    this.elementArr = this.props.data.result.body.content;
-    this.documentStyle = this.props.data.result.documentStyle;
-    this.namedStyles = this.props.data.result.namedStyles.styles;
-    this.inlineObjects = this.props.data.result.inlineObjects;
-    this.lists = this.props.data.result.lists;
-    // this.elementArr = data1.body.content;
-    // this.documentStyle = data1.documentStyle;
-    // this.namedStyles = data1.namedStyles.styles;
-    // this.inlineObjects = data1.inlineObjects;
-    // this.lists = data1.lists;
-  }
+export const getSectionBlocks = (data) => {
+  // let elementArr = dummyData.result.body.content;
+  // let documentStyle = dummyData.result.documentStyle;
+  // let namedStyles = dummyData.result.namedStyles.styles;
+  // let inlineObjects = dummyData.result.inlineObjects;
+  // let lists = dummyData.result.lists;
+  let elementArr = data.body.content;
+  let documentStyle = data.documentStyle;
+  let namedStyles = data.namedStyles.styles;
+  let inlineObjects = data.inlineObjects;
+  let lists = data.lists;
+  let sectionBlocks = [];
   
-  componentDidMount() {
-    this.frameStyle = getFrameStyle(this.documentStyle);
-    this.namedStyles = getNamedStyle(this.namedStyles);
-    this.getSectionBlocks();
-  }
-  
-  getSectionBlocks = () => {
-    let curBlock = '';
-    let curType = 2;  // start with slide section
-    let curTitle = '';
-    let sectionBlocks = [];
-    this.elementArr.forEach((element, key) => {
-      let tempBlock = this.renderElements(element, key);
-      let elementStr = element.paragraph ? JSON.stringify(element.paragraph.elements) : '';
-      
-      if (tempBlock) {
-        if (elementStr.indexOf('[VIDEOHEADER]') >= 0) {
-          // video section start
-          curType = 0;
-          curBlock = '';
-        } else if (elementStr.indexOf('[VIDEOBOTTOM]') >= 0) {
-          // video section end
-          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
-          curBlock = '';
-          curTitle = '';
-        } else if (elementStr.indexOf('[QUESTIONHEADER]') >= 0) {
-          // question section start
-          curType = 1;
-          curBlock = '';
-        } else if (elementStr.indexOf('[QUESTIONBOTTOM]') >= 0) {
-          // question section end
-          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
-          curBlock = '';
-          curTitle = '';
-        } else if (elementStr.indexOf('[SLIDECUT]') >= 0) {
-          // end of section - video, question, slide
-          if (curType === 2) {
-            // this is the end of slide section
-            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'slide'}];
-          } else if (curType === 0) {
-            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
-          } else if (curType === 1) {
-            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
-          }
-          curTitle = '';
-          curType = 2;  // type initialize
-        } else {
-          if (curTitle === '') {
-            // this is the start of new section - catch section title here
-            if (element.paragraph) {
-              curTitle = element.paragraph.elements[0].textRun && element.paragraph.elements[0].textRun.content;
-            }
-          }
-          curBlock = [...curBlock, tempBlock];
-        }
-      }
-    });
-    this.props.getSections({sectionBlocks, docFrameStyle: this.frameStyle});
-  };
-  
-  renderTextElement = (textElement, key) => {
+  const renderTextElement = (textElement, key) => {
     const {content, textStyle} = textElement;
     let renderElement = null;
     let style = getTextStyle(textStyle);
@@ -89,13 +27,13 @@ class DocViewFrame extends Component {
     return renderElement;
   };
   
-  renderObjectElement = (objElement, key) => {
+  const renderObjectElement = (objElement, key) => {
     if (objElement.inlineObjectId) {
       const {inlineObjectId, textStyle} = objElement;
-      let object = this.inlineObjects[inlineObjectId].inlineObjectProperties.embeddedObject;
+      let object = inlineObjects[inlineObjectId].inlineObjectProperties.embeddedObject;
       let objStyle = {};
       let src = null;
-  
+      
       if (textStyle) {
         objStyle = getTextStyle(textStyle);
       }
@@ -126,15 +64,15 @@ class DocViewFrame extends Component {
     }
   };
   
-  renderDocElement = (element, key) => {
+  const renderDocElement = (element, key) => {
     if (element.inlineObjectElement) {
-      return this.renderObjectElement(element.inlineObjectElement, key);
+      return renderObjectElement(element.inlineObjectElement, key);
     } else if(element.textRun) {
-      return this.renderTextElement(element.textRun, key);
+      return renderTextElement(element.textRun, key);
     }
   };
   
-  renderTableCell = (tableCell, columnStyle, key) => {
+  const renderTableCell = (tableCell, columnStyle, key) => {
     const {content, tableCellStyle} = tableCell;
     let style = columnStyle;
     style.border = 'solid 1px black';
@@ -179,21 +117,21 @@ class DocViewFrame extends Component {
       let rgbColor = tableCellStyle.borderBottom.color.color.rgbColor;
       style.borderBottom = `${tableCellStyle.borderBottom.dashStyle} ${tableCellStyle.borderBottom.width.magnitude}${tableCellStyle.borderBottom.width.unit} rgb(${(rgbColor.red || 0)*255},${(rgbColor.green || 0)*255},${(rgbColor.blue || 0)*255})`;
     }
-    return <td style={style} key={key}>{content.map((item, key) => this.renderParagraph(item.paragraph, key))}</td>;
+    return <td style={style} key={key}>{content.map((item, key) => renderParagraph(item.paragraph, key))}</td>;
   };
   
-  renderTableRow = (tableRow, columnStyles, key) => {
+  const renderTableRow = (tableRow, columnStyles, key) => {
     const {tableCells, tableRowStyle} = tableRow;
     let style = {};
     if (tableRowStyle.minRowHeight && tableRowStyle.minRowHeight.magnitude) {
       style.minHeight = tableRowStyle.minRowHeight.magnitude + tableRowStyle.minRowHeight.unit;
     }
     return <tr style={style} key={key}>
-      {tableCells.map((tableCell, i) => this.renderTableCell(tableCell, columnStyles[i], i))}
+      {tableCells.map((tableCell, i) => renderTableCell(tableCell, columnStyles[i], i))}
     </tr>;
   };
   
-  renderTableElement = (tableElement, key) => {
+  const renderTableElement = (tableElement, key) => {
     const {rows, tableRows, tableStyle} = tableElement;
     let columnStyles = [];
     if (tableStyle.tableColumnProperties) {
@@ -210,18 +148,18 @@ class DocViewFrame extends Component {
     }
     if (rows > 0) {
       return <table style={{borderSpacing: 'unset', margin: '0 auto'}} key={key}>
-        <tbody>{tableRows.map((tableRow, key) => this.renderTableRow(tableRow, columnStyles, key))}</tbody>
+        <tbody>{tableRows.map((tableRow, key) => renderTableRow(tableRow, columnStyles, key))}</tbody>
       </table>;
     }
   };
-
-  renderParagraph = (paragraph, key) => {
+  
+  const renderParagraph = (paragraph, key) => {
     const {elements, paragraphStyle, bullet} = paragraph;
     let style = {};
     
-    if (paragraphStyle.namedStyleType && this.namedStyles[paragraphStyle.namedStyleType]) {
+    if (paragraphStyle.namedStyleType && namedStyles[paragraphStyle.namedStyleType]) {
       // getting named style
-      let {textStyle, paraStyle} = this.namedStyles[paragraphStyle.namedStyleType];
+      let {textStyle, paraStyle} = namedStyles[paragraphStyle.namedStyleType];
       style = getTextStyle(textStyle);
       if (paraStyle.alignment === 'START') {
         //
@@ -291,7 +229,7 @@ class DocViewFrame extends Component {
     let domBullet = null;
     if (bullet) {
       const {listId} = bullet;
-      let bulletObj = this.lists[listId];
+      let bulletObj = lists[listId];
       let bulletStyle = {};
       bulletObj = bulletObj.listProperties.nestingLevels[0];
       if (bulletObj.indentFirstLine) {
@@ -303,24 +241,76 @@ class DocViewFrame extends Component {
     return (
       <div style={style} key={key}>
         {domBullet}
-        {elements.map((element, key) => this.renderDocElement(element, key))}
+        {elements.map((element, key) => renderDocElement(element, key))}
       </div>
     )
   };
   
-  renderElements = (elementContainer, key) => {
+  const renderElements = (elementContainer, key) => {
     if (elementContainer.table) {
-      return this.renderTableElement(elementContainer.table, key);
+      return renderTableElement(elementContainer.table, key);
     } else if (elementContainer.paragraph) {
-      return this.renderParagraph(elementContainer.paragraph, key);
+      return renderParagraph(elementContainer.paragraph, key);
     } else {
       return null;
     }
   };
   
-  render() {
-    return null;
-  }
-}
-
-export default DocViewFrame;
+  const getSections = () => {
+    let curBlock = '';
+    let curType = 2;  // start with slide section
+    let curTitle = '';
+    sectionBlocks = [];
+    elementArr.forEach((element, key) => {
+      let tempBlock = renderElements(element, key);
+      let elementStr = element.paragraph ? JSON.stringify(element.paragraph.elements) : '';
+      
+      if (tempBlock) {
+        if (elementStr.indexOf('[VIDEOHEADER]') >= 0) {
+          // video section start
+          curType = 0;
+          curBlock = '';
+        } else if (elementStr.indexOf('[VIDEOBOTTOM]') >= 0) {
+          // video section end
+          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
+          curBlock = '';
+          curTitle = '';
+        } else if (elementStr.indexOf('[QUESTIONHEADER]') >= 0) {
+          // question section start
+          curType = 1;
+          curBlock = '';
+        } else if (elementStr.indexOf('[QUESTIONBOTTOM]') >= 0) {
+          // question section end
+          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
+          curBlock = '';
+          curTitle = '';
+        } else if (elementStr.indexOf('[SLIDECUT]') >= 0) {
+          // end of section - video, question, slide
+          if (curType === 2) {
+            // this is the end of slide section
+            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'slide'}];
+          } else if (curType === 0) {
+            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
+          } else if (curType === 1) {
+            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
+          }
+          curTitle = '';
+          curType = 2;  // type initialize
+        } else {
+          if (curTitle === '') {
+            // this is the start of new section - catch section title here
+            if (element.paragraph) {
+              curTitle = element.paragraph.elements[0].textRun && element.paragraph.elements[0].textRun.content;
+            }
+          }
+          curBlock = [...curBlock, tempBlock];
+        }
+      }
+    });
+  };
+  
+  let frameStyle = getFrameStyle(documentStyle);
+  namedStyles = getNamedStyle(namedStyles);
+  getSections();
+  return {docSections: sectionBlocks, docFrameStyle: frameStyle};
+};
