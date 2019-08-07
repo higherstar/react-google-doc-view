@@ -9,7 +9,7 @@ const ReactGoogleDocView = ({ docContent }) => {
         <div className='doc-view-frame' style={docContent.docFrameStyle}>
           <div className='warning-message'>
             {docContent.errors.map((item, key) => <div key={key}>
-              <span className='error-type'>{item.type}</span>
+              <span className='error-type'>{item.type} [{item.context}]</span>
               <span> : {item.message}</span>
             </div>)}
           </div>

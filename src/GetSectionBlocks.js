@@ -265,8 +265,8 @@ export const getSectionBlocks = (data) => {
     }
   };
   
-  const addError = (type, message, action) => {
-    errors.push({type, message, action});
+  const addError = (type, message, action, context) => {
+    errors.push({type, message, action, context});
   };
   
   const getSections = () => {
@@ -298,53 +298,47 @@ export const getSectionBlocks = (data) => {
           element.paragraph.elements[0].textRun.content : '';
         
         if (videoStarted) {
+          /**
+           * H1 followed by VIDEOHEADER inspection
+           */
+          if (nextElementStyle.indexOf('HEADING_1') < 0) {
+            addError('Heading', 'H1 does not exist right after VIDEOHEADER.', 'hard', curTitle);
+            break;
+          }
+  
           // video section start
           curType = 0;
           isFirstVideoHeader ++;
           isBlockFinished = false;
           curSlideStrLength = 0;
-          
-          /**
-           * H1 followed by VIDEOHEADER inspection
-           */
-          if (nextElementStyle.indexOf('HEADING_1') < 0) {
-            addError('Heading', 'H1 does not exist right after VIDEOHEADER.', 'hard');
-            break;
-          }
-        } else if (videoEnded) {
-          // video section end
-          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
-          curBlock = [];
-          curBlockStrLength = 0;
           curTitle = '';
-          isBlockFinished = true;
-          
+        } else if (videoEnded) {
           /**
            * SLIDECUT after VIDEOBOTTOM inspection
            */
           if (nextElementStr.indexOf('[SLIDECUT]') < 0 && isFirstVideoHeader > 1) {
-            addError('Tag', '[SLIDECUT] does not exist after [VIDEOBOTTOM].', 'hard');
+            addError('Tag', '[SLIDECUT] does not exist after [VIDEOBOTTOM].', 'hard', curTitle);
             break;
           }
+  
+          // video section end
+          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
+          curBlock = [];
+          curBlockStrLength = 0;
+          isBlockFinished = true;
         } else if (questionStarted) {
           // question section start
           curType = 1;
+          curTitle = '';
           curSlideStrLength = 0;
           curQuestionCount = 0;
           isBlockFinished = false;
         } else if (questionEnded) {
-          // question section end
-          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
-          curBlock = [];
-          curBlockStrLength = 0;
-          curTitle = '';
-          isBlockFinished = true;
-          
           /**
            * SLIDECUT after QUESTIONBOTTOM inspection
            */
           if (nextElementStr.indexOf('[SLIDECUT]') < 0) {
-            addError('Tag', '[SLIDECUT] does not exist after [QUESTIONBOTTOM].', 'hard');
+            addError('Tag', '[SLIDECUT] does not exist after [QUESTIONBOTTOM].', 'hard', curTitle);
             break;
           }
           /**
@@ -354,14 +348,20 @@ export const getSectionBlocks = (data) => {
             let table = elementArr[i-1].table;
             if (table) {
               if (table.tableRows[0].tableCells.length < 4) {
-                addError('Question', 'A question must have at minimum: Question Name, Question text, a Correct answer, and a Wrong answer.', 'hard');
+                addError('Question', 'A question must have at minimum: Question Name, Question text, a Correct answer, and a Wrong answer.', 'hard', curTitle);
                 break;
               }
             } else {
-              addError('Question', 'A question must have at minimum: Question Name, Question text, a Correct answer, and a Wrong answer.', 'hard');
+              addError('Question', 'A question must have at minimum: Question Name, Question text, a Correct answer, and a Wrong answer.', 'hard', curTitle);
               break;
             }
           }
+  
+          // question section end
+          sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
+          curBlock = [];
+          curBlockStrLength = 0;
+          isBlockFinished = true;
         } else if (slideCut) {
           // end of section - video, question, slide
           if (curType === 2) {
@@ -372,30 +372,30 @@ export const getSectionBlocks = (data) => {
             /**
              * VIDEOHEADER, VIDEOBOTTOM matching inspection
              */
-            addError('Tag', '[VIDEOBOTTOM] does not exist.', 'hard');
+            addError('Tag', '[VIDEOBOTTOM] does not exist.', 'hard', curTitle);
             break;
           } else if (curType === 1 && !isBlockFinished) {
             /**
              * QUESTIONHEADER, QUESTIONBOTTOM matching inspection
              */
-            addError('Tag', '[QUESTIONBOTTOM] does not exist.', 'hard');
+            addError('Tag', '[QUESTIONBOTTOM] does not exist.', 'hard', curTitle);
             break;
           }
-          curTitle = '';
-          curType = 2;  // type initialization
-  
           /**
            *  h1 after SLIDECUT inspection
            */
           if (nextElementStyle.indexOf('HEADING_1') < 0 && nextElementStr.indexOf('QUESTIONHEADER') < 0 && nextElementStr.indexOf('VIDEOHEADER') < 0) {
-            addError('Heading', 'H1 does not exist after SLIDECUT.', 'hard');
+            addError('Heading', 'H1 does not exist after SLIDECUT.', 'hard', curTitle);
             break;
           }
+          curTitle = '';
+          curType = 2;    // type initialization
         } else {
           if (curTitle === '') {
             // this is the start of new section - catch section title here
             if (element.paragraph) {
               curTitle = curText;
+              curSlideStrLength = 0;
             }
           }
           curBlockStrLength += curText.length;
@@ -406,12 +406,12 @@ export const getSectionBlocks = (data) => {
            */
           if (curType === 2) {
             if (curBlockStrLength >= 30000) {
-              addError('Section', 'Slide section contains more than 30000 characters.', 'soft');
+              addError('Section', 'Slide section contains more than 30000 characters.', 'soft', curTitle);
             } else if (elementStyle.indexOf('HEADING') < 0) {
               // not heading, count normal text length
               curSlideStrLength += curText.length;
               if (curSlideStrLength > 3000) {
-                addError('Slide', 'Length of text between two headings in slide section cannot be longer than 3000.', 'soft');
+                addError('Slide', 'Length of text between two headings in slide section cannot be longer than 3000.', 'soft', curTitle);
               }
             }
           }
@@ -423,7 +423,7 @@ export const getSectionBlocks = (data) => {
         if (elementStyle.indexOf('HEADING') >= 0) {
           curSlideStrLength = 0;
           if (curText.length > 150) {
-            addError('Heading', 'Heading contains more than 150 characters.', 'soft');
+            addError('Heading', 'Heading contains more than 150 characters.', 'soft', curTitle);
           }
         }
         if (nextElementStyle.indexOf('HEADING') >= 0) {
@@ -431,12 +431,12 @@ export const getSectionBlocks = (data) => {
           let headingType = elementStyle.substr('-1') || 0;
           if (nextHeadingType === 1) {
             if (!slideCut && !videoStarted) {
-              addError('Heading', 'H1 can only be followed by VIDEOHEADER or SLIDECUT.', 'hard');
+              addError('Heading', 'H1 can only be followed by VIDEOHEADER or SLIDECUT.', 'hard', curTitle);
               break;
             }
           }
           if (elementStyle.indexOf('HEADING') >= 0 && headingType > nextHeadingType) {
-            addError('Heading', `Headings need to cascade: ${nextElementStyle} after ${elementStyle}.`, 'hard');
+            addError('Heading', `Headings need to cascade: ${nextElementStyle} after ${elementStyle}.`, 'hard', curTitle);
             break;
           }
         }
