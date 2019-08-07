@@ -104,7 +104,7 @@ export const dummyData = {
        "startIndex": 69,
        "endIndex": 104,
        "textRun": {
-        "content": "It can contain multiple paragraphs.",
+        "content": "[VIDEOBOTTOM]",
         "textStyle": {
         }
        }
@@ -24367,7 +24367,7 @@ export const dummyData = {
        "startIndex": 73287,
        "endIndex": 73753,
        "textRun": {
-        "content": "At the start of this lesson, I mentioned that Articles 210 and 250 have the bulk of the changes to Chapter 2 in the 2017 NEC. There are 11 changes to Article 250, alone, which accounts for over a third of all of the changes to Chapter 2 in the 2017 NEC. We’re well past the halfway point in this lesson, but some of the most significant changes to Chapter 2 will be addressed in this final portion of the lesson. We’ll start with changes to a Table – Table 240.6(A).",
+        "content": "[VIDEOBOTTOM]",
         "textStyle": {
         }
        }
@@ -24879,7 +24879,7 @@ export const dummyData = {
        "startIndex": 74749,
        "endIndex": 74784,
        "textRun": {
-        "content": "Article 240 Overcurrent Protection\n",
+        "content": "Article 240 Overcurasdfasdf sdaf asd fasdf asdf asdf asdf asd fasdf asdf uasduf asiduf iausiduf iausidfu asud fuiasdu fiasdu iausdi fuaisdu fiausd ifuasdiuf iasduf iausdifuasodufoiasud ifusadu fasud fausdofu asufasdu iu faisdu fiasdu fiausdi fuasdiuf isdu faisudi fuasdiuf aisdu fiosdu iusdiuf siadu faisdu iosud rent Protection\n",
         "textStyle": {
          "bold": false,
          "fontSize": {

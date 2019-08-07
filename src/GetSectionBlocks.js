@@ -2,19 +2,15 @@ import React from "react";
 import { getFrameStyle, getNamedStyle, getBorderStyle, getTextStyle } from "./GetStyle";
 
 export const getSectionBlocks = (data) => {
-  // let elementArr = dummyData.result.body.content;
-  // let documentStyle = dummyData.result.documentStyle;
-  // let namedStyles = dummyData.result.namedStyles.styles;
-  // let inlineObjects = dummyData.result.inlineObjects;
-  // let lists = dummyData.result.lists;
   let elementArr = data.body.content;
   let documentStyle = data.documentStyle;
   let namedStyles = data.namedStyles.styles;
   let inlineObjects = data.inlineObjects;
   let lists = data.lists;
   let sectionBlocks = [];
+  let errors = [];
   
-  const renderTextElement = (textElement, key) => {
+  const renderTextElement = (textElement, key, namedStyletype) => {
     const {content, textStyle} = textElement;
     let renderElement = null;
     let style = getTextStyle(textStyle);
@@ -22,7 +18,20 @@ export const getSectionBlocks = (data) => {
     if (textStyle.link && textStyle.link !== {}) {
       renderElement = <a href={textStyle.link.url} key={key} style={style}>{content}</a>;
     } else {
-      renderElement = <span style={style} key={key}>{content}</span>;
+      if (namedStyletype === 'HEADING_1')
+        renderElement = <h1 style={style} key={key}>{content}</h1>;
+      else if (namedStyletype === 'HEADING_2')
+        renderElement = <h2 style={style} key={key}>{content}</h2>;
+      else if (namedStyletype === 'HEADING_3')
+        renderElement = <h3 style={style} key={key}>{content}</h3>;
+      else if (namedStyletype === 'HEADING_4')
+        renderElement = <h4 style={style} key={key}>{content}</h4>;
+      else if (namedStyletype === 'HEADING_5')
+        renderElement = <h5 style={style} key={key}>{content}</h5>;
+      else if (namedStyletype === 'HEADING_6')
+        renderElement = <h6 style={style} key={key}>{content}</h6>;
+      else
+        renderElement = <span style={style} key={key}>{content}</span>;
     }
     return renderElement;
   };
@@ -64,11 +73,11 @@ export const getSectionBlocks = (data) => {
     }
   };
   
-  const renderDocElement = (element, key) => {
+  const renderDocElement = (element, key, namedStyletype) => {
     if (element.inlineObjectElement) {
       return renderObjectElement(element.inlineObjectElement, key);
     } else if(element.textRun) {
-      return renderTextElement(element.textRun, key);
+      return renderTextElement(element.textRun, key, namedStyletype);
     }
   };
   
@@ -241,7 +250,7 @@ export const getSectionBlocks = (data) => {
     return (
       <div style={style} key={key}>
         {domBullet}
-        {elements.map((element, key) => renderDocElement(element, key))}
+        {elements.map((element, key) => renderDocElement(element, key, paragraphStyle.namedStyleType))}
       </div>
     )
   };
@@ -256,61 +265,187 @@ export const getSectionBlocks = (data) => {
     }
   };
   
+  const addError = (type, message, action) => {
+    errors.push({type, message, action});
+  };
+  
   const getSections = () => {
     let curBlock = '';
     let curType = 2;  // start with slide section
     let curTitle = '';
+    let curBlockStrLength = 0;
+    let curSlideStrLength = 0;
+    let curQuestionCount = 0;
     sectionBlocks = [];
-    elementArr.forEach((element, key) => {
-      let tempBlock = renderElements(element, key);
+    let isFirstVideoHeader = 0;
+    let isBlockFinished = false;
+
+    for (let i = 0; i < elementArr.length; i ++) {
+      let element = elementArr[i];
+      let tempBlock = renderElements(element, i);
       let elementStr = element.paragraph ? JSON.stringify(element.paragraph.elements) : '';
+      let elementStyle = element.paragraph && element.paragraph.paragraphStyle.namedStyleType ? element.paragraph.paragraphStyle.namedStyleType : '';
+      let nextElementStr = elementArr[i + 1].paragraph ? JSON.stringify(elementArr[i + 1].paragraph.elements) : '';
+      let nextElementStyle = elementArr[i + 1].paragraph && elementArr[i + 1].paragraph.paragraphStyle.namedStyleType ? elementArr[i + 1].paragraph.paragraphStyle.namedStyleType : '';
       
       if (tempBlock) {
-        if (elementStr.indexOf('[VIDEOHEADER]') >= 0) {
+        let videoStarted = elementStr.indexOf('[VIDEOHEADER]') >= 0;
+        let videoEnded = elementStr.indexOf('[VIDEOBOTTOM]') >= 0;
+        let questionStarted = elementStr.indexOf('[QUESTIONHEADER]') >= 0;
+        let questionEnded = elementStr.indexOf('[QUESTIONBOTTOM]') >= 0;
+        let slideCut = elementStr.indexOf('[SLIDECUT]') >= 0;
+        let curText = element.paragraph && element.paragraph.elements[0].textRun && element.paragraph.elements[0].textRun.content ?
+          element.paragraph.elements[0].textRun.content : '';
+        
+        if (videoStarted) {
           // video section start
           curType = 0;
-          curBlock = '';
-        } else if (elementStr.indexOf('[VIDEOBOTTOM]') >= 0) {
+          isFirstVideoHeader ++;
+          isBlockFinished = false;
+          curSlideStrLength = 0;
+          
+          /**
+           * H1 followed by VIDEOHEADER inspection
+           */
+          if (nextElementStyle.indexOf('HEADING_1') < 0) {
+            addError('Heading', 'H1 does not exist right after VIDEOHEADER.', 'hard');
+            break;
+          }
+        } else if (videoEnded) {
           // video section end
           sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
-          curBlock = '';
+          curBlock = [];
+          curBlockStrLength = 0;
           curTitle = '';
-        } else if (elementStr.indexOf('[QUESTIONHEADER]') >= 0) {
+          isBlockFinished = true;
+          
+          /**
+           * SLIDECUT after VIDEOBOTTOM inspection
+           */
+          if (nextElementStr.indexOf('[SLIDECUT]') < 0 && isFirstVideoHeader > 1) {
+            addError('Tag', '[SLIDECUT] does not exist after [VIDEOBOTTOM].', 'hard');
+            break;
+          }
+        } else if (questionStarted) {
           // question section start
           curType = 1;
-          curBlock = '';
-        } else if (elementStr.indexOf('[QUESTIONBOTTOM]') >= 0) {
+          curSlideStrLength = 0;
+          curQuestionCount = 0;
+          isBlockFinished = false;
+        } else if (questionEnded) {
           // question section end
           sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
-          curBlock = '';
+          curBlock = [];
+          curBlockStrLength = 0;
           curTitle = '';
-        } else if (elementStr.indexOf('[SLIDECUT]') >= 0) {
+          isBlockFinished = true;
+          
+          /**
+           * SLIDECUT after QUESTIONBOTTOM inspection
+           */
+          if (nextElementStr.indexOf('[SLIDECUT]') < 0) {
+            addError('Tag', '[SLIDECUT] does not exist after [QUESTIONBOTTOM].', 'hard');
+            break;
+          }
+          /**
+           * question content inspection
+           */
+          if (curQuestionCount < 4) {
+            let table = elementArr[i-1].table;
+            if (table) {
+              if (table.tableRows[0].tableCells.length < 4) {
+                addError('Question', 'A question must have at minimum: Question Name, Question text, a Correct answer, and a Wrong answer.', 'hard');
+                break;
+              }
+            } else {
+              addError('Question', 'A question must have at minimum: Question Name, Question text, a Correct answer, and a Wrong answer.', 'hard');
+              break;
+            }
+          }
+        } else if (slideCut) {
           // end of section - video, question, slide
           if (curType === 2) {
             // this is the end of slide section
+            isBlockFinished = true;
             sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'slide'}];
-          } else if (curType === 0) {
-            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'video'}];
-          } else if (curType === 1) {
-            sectionBlocks = [...sectionBlocks, {title: curTitle, content: curBlock, type: 'question'}];
+          } else if (curType === 0 && !isBlockFinished) {
+            /**
+             * VIDEOHEADER, VIDEOBOTTOM matching inspection
+             */
+            addError('Tag', '[VIDEOBOTTOM] does not exist.', 'hard');
+            break;
+          } else if (curType === 1 && !isBlockFinished) {
+            /**
+             * QUESTIONHEADER, QUESTIONBOTTOM matching inspection
+             */
+            addError('Tag', '[QUESTIONBOTTOM] does not exist.', 'hard');
+            break;
           }
           curTitle = '';
-          curType = 2;  // type initialize
+          curType = 2;  // type initialization
+  
+          /**
+           *  h1 after SLIDECUT inspection
+           */
+          if (nextElementStyle.indexOf('HEADING_1') < 0 && nextElementStr.indexOf('QUESTIONHEADER') < 0 && nextElementStr.indexOf('VIDEOHEADER') < 0) {
+            addError('Heading', 'H1 does not exist after SLIDECUT.', 'hard');
+            break;
+          }
         } else {
           if (curTitle === '') {
             // this is the start of new section - catch section title here
             if (element.paragraph) {
-              curTitle = element.paragraph.elements[0].textRun && element.paragraph.elements[0].textRun.content;
+              curTitle = curText;
             }
           }
+          curBlockStrLength += curText.length;
           curBlock = [...curBlock, tempBlock];
+          
+          /**
+           *  slide section total text length, text length between headings inspection
+           */
+          if (curType === 2) {
+            if (curBlockStrLength >= 30000) {
+              addError('Section', 'Slide section contains more than 30000 characters.', 'soft');
+            } else if (elementStyle.indexOf('HEADING') < 0) {
+              // not heading, count normal text length
+              curSlideStrLength += curText.length;
+              if (curSlideStrLength > 3000) {
+                addError('Slide', 'Length of text between two headings in slide section cannot be longer than 3000.', 'soft');
+              }
+            }
+          }
+        }
+  
+        /**
+         * Heading Exception inspection
+         */
+        if (elementStyle.indexOf('HEADING') >= 0) {
+          curSlideStrLength = 0;
+          if (curText.length > 150) {
+            addError('Heading', 'Heading contains more than 150 characters.', 'soft');
+          }
+        }
+        if (nextElementStyle.indexOf('HEADING') >= 0) {
+          let nextHeadingType = nextElementStyle.substr('-1');
+          let headingType = elementStyle.substr('-1') || 0;
+          if (nextHeadingType === 1) {
+            if (!slideCut && !videoStarted) {
+              addError('Heading', 'H1 can only be followed by VIDEOHEADER or SLIDECUT.', 'hard');
+              break;
+            }
+          }
+          if (elementStyle.indexOf('HEADING') >= 0 && headingType > nextHeadingType) {
+            addError('Heading', `Headings need to cascade: ${nextElementStyle} after ${elementStyle}.`, 'hard');
+            break;
+          }
         }
       }
-    });
+    }
   };
   
   let frameStyle = getFrameStyle(documentStyle);
   namedStyles = getNamedStyle(namedStyles);
   getSections();
-  return {docSections: sectionBlocks, docFrameStyle: frameStyle};
+  return {docSections: sectionBlocks, docFrameStyle: frameStyle, errors};
 };
