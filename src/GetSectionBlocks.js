@@ -508,6 +508,7 @@ export const getSectionBlocks = data => {
                             ...sectionBlocks,
                             { title: curTitle, content: curBlock, type: 'slide' },
                         ];
+                        curBlock = [];
                     } else if (curType === 0 && !isBlockFinished) {
                         /**
                          * VIDEOHEADER, VIDEOBOTTOM matching inspection
@@ -525,6 +526,7 @@ export const getSectionBlocks = data => {
                      *  h1 after SLIDECUT inspection
                      */
                     if (
+                        nextElementStr &&
                         nextElementStyle.indexOf('HEADING_1') < 0 &&
                         nextElementStr.indexOf('QUESTIONHEADER') < 0 &&
                         nextElementStr.indexOf('VIDEOHEADER') < 0
