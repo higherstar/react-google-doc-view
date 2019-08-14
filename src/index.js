@@ -1,23 +1,12 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import './index.css';
+import App from './App/App';
+import * as serviceWorker from './serviceWorker';
 
-const ReactGoogleDocView = ({ docContent }) => {
-  docContent.errors.forEach(item => item.action === 'hard' && alert(item.message));
-  return (
-    <div className='doc-view-container'>
-      <div className='page-container'>
-        <div className='doc-view-frame' style={docContent.docFrameStyle}>
-          <div className='warning-message'>
-            {docContent.errors.map((item, key) => <div key={key}>
-              <span className='error-type'>{item.type} [{item.context}]</span>
-              <span> : {item.message}</span>
-            </div>)}
-          </div>
-          {docContent.docSections.map(block => block.content)}
-        </div>
-      </div>
-    </div>
-  )
-};
-export default ReactGoogleDocView;
-export { getSectionBlocks } from './GetSectionBlocks';
+ReactDOM.render(<App />, document.getElementById('root'));
+
+// If you want your app to work offline and load faster, you can change
+// unregister() to register() below. Note this comes with some pitfalls.
+// Learn more about service workers: https://bit.ly/CRA-PWA
+serviceWorker.unregister();
