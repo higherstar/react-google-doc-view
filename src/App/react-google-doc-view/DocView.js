@@ -117,10 +117,18 @@ const DocView = ({ docContent }) => {
     let nodeBody = [];
     
     if (level > 1) {
-      const parent = findParent(nodeContent.id, level);
-      if (parent) {
-        nodeBody.push(renderTitle(parent));
+      let child = nodeContent;
+      while (child.level > 1) {
+        const parent = findParent(child.id, child.level);
+        if (parent) {
+          nodeBody.push(renderTitle(parent));
+          child = parent;
+        } else {
+          console.log('no parent');
+          break;
+        }
       }
+      nodeBody.reverse();
     }
     if (nodeTitle) nodeBody.push(nodeTitle);
     
