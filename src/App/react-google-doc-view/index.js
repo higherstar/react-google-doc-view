@@ -23,9 +23,12 @@ const ReactGoogleDocView = ({ documentId }) => {
         Authorization: `Bearer ${cookies.get('accessToken')}`,
       },
     }).then((res) => {
+      console.log(res);
       const docContent = getSectionBlocks(res.data);
+      console.log(docContent);
       setDocContent(docContent);
     }).catch((err) => {
+      console.log(err);
       cookies.remove('accessToken');
       setDocContent(null);
     });
@@ -59,7 +62,6 @@ const ReactGoogleDocView = ({ documentId }) => {
   };
   
   useEffect(() => {
-    console.log('here');
     if (!docContent) {
       if (!document.getElementById('google-doc-login')) {
         loadScript(document, 'script', 'google-doc-login', 'https://apis.google.com/js/api.js', () => {
@@ -77,7 +79,7 @@ const ReactGoogleDocView = ({ documentId }) => {
         }
       }
     }
-  });
+  }, [docContent]);
 
   return (
     <React.Fragment>
