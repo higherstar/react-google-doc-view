@@ -1,8 +1,14 @@
 .page-container {
   overflow-y: auto;
   background-color: white;
-  box-shadow: 0 2px 5px 1px rgba(0,0,0,0.2);
+  border: solid 2px black;
   text-align: left;
+  padding: 20px;
+  width: 1200px;
+}
+
+.doc-view-frame-container {
+  box-shadow: 0 2px 5px 1px rgba(0,0,0,0.2);
 }
 
 .doc-view-container {
@@ -10,6 +16,43 @@
   justify-content: center;
   background-color: white;
   margin-top: 3rem;
+}
+
+.doc-view-frame {
+  padding: 20px;
+  height: 600px;
+  overflow: auto;
+}
+
+.doc-view-frame-header {
+  width: 100%;
+  height: 50px;
+  background: #F7F7F7;
+}
+
+.doc-view-frame-controller {
+  width: 100%;
+  height: 50px;
+  background: #F7F7F7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.doc-view-frame-controller > div {
+  background: #0054A9;
+  color: white;
+  font-weight: 600;
+  padding: 5px 20px;
+  box-shadow: 0 2px 5px 1px rgba(0,0,0,0.4);
+  border-radius: 5px;
+  cursor: pointer;
+}
+.doc-view-frame-controller > div:first-child {
+  margin-left: 20px;
+}
+.doc-view-frame-controller > div:last-child {
+  margin-right: 20px;
 }
 
 .error-type {

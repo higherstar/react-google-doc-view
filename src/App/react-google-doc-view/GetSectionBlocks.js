@@ -1,5 +1,5 @@
 import React from 'react';
-import { getFrameStyle, getNamedStyle, getBorderStyle, getTextStyle } from './operations';
+import { getFrameStyle, getNamedStyle, getBorderStyle, getTextStyle, getHeadingNum } from './operations';
 
 export const getSectionBlocks = data => {
   // console.log('processing data', data);
@@ -366,20 +366,6 @@ export const getSectionBlocks = data => {
     errors.push({ type, message, action, context, key: errors.length });
   };
   
-  const getHeadingNum = (element) => {
-    if (!element) return -1;
-    const elementStyle =
-      element.paragraph && element.paragraph.paragraphStyle.namedStyleType
-        ? element.paragraph.paragraphStyle.namedStyleType
-        : '';
-    for (let k = 1; k < 7; k++) {
-      if (elementStyle.indexOf(`HEADING_${k}`) >= 0) {
-        return k;
-      }
-    }
-    return -1;
-  };
-  
   const getSectionList = (startPos) => {
     if (startPos >= elementArr.length) {
       return {nodes: null, endPos: startPos + 1};
@@ -701,6 +687,7 @@ export const getSectionBlocks = data => {
     docSections: sectionBlocks,
     docSectionList: sectionList,
     docFrameStyle: frameStyle,
-    errors
+    errors,
+    totalElementCount: elementArr.length
   };
 };
