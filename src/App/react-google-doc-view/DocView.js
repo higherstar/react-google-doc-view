@@ -86,22 +86,22 @@ const DocView = ({ docContent }) => {
     // render title
     switch (level) {
       case 1:
-        nodeTitle = <h1>{title}</h1>;
+        nodeTitle = <h1 style={{fontSize: '32px'}}>{title}</h1>;
         break;
       case 2:
-        nodeTitle = <h2>{title}</h2>;
+        nodeTitle = <h2 style={{fontSize: '24px'}}>{title}</h2>;
         break;
       case 3:
-        nodeTitle = <h3>{title}</h3>;
+        nodeTitle = <h3 style={{fontSize: '16px'}}>{title}</h3>;
         break;
       case 4:
-        nodeTitle = <h4>{title}</h4>;
+        nodeTitle = <h4 style={{fontSize: '15px'}}>{title}</h4>;
         break;
       case 5:
-        nodeTitle = <h5>{title}</h5>;
+        nodeTitle = <h5 style={{fontSize: '14px'}}>{title}</h5>;
         break;
       case 6:
-        nodeTitle = <h6>{title}</h6>;
+        nodeTitle = <h6 style={{fontSize: '13px'}}>{title}</h6>;
         break;
     
       default:
@@ -119,7 +119,7 @@ const DocView = ({ docContent }) => {
     if (level > 1) {
       const parent = findParent(nodeContent.id, level);
       if (parent) {
-        nodeBody.push(renderTitle(nodeContent));
+        nodeBody.push(renderTitle(parent));
       }
     }
     if (nodeTitle) nodeBody.push(nodeTitle);
