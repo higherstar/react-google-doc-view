@@ -1,5 +1,4 @@
 .page-container {
-  overflow-y: auto;
   background-color: white;
   border: solid 2px black;
   text-align: left;
@@ -20,14 +19,15 @@
 
 .doc-view-frame {
   padding: 20px;
-  height: 600px;
-  overflow: auto;
 }
 
 .doc-view-frame-header {
   width: 100%;
   height: 50px;
   background: #F7F7F7;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .doc-view-frame-controller {
@@ -53,6 +53,39 @@
 }
 .doc-view-frame-controller > div:last-child {
   margin-right: 20px;
+}
+
+.btn-show-list {
+  background: white;
+  color: white;
+  font-weight: 600;
+  padding: 5px 10px;
+  box-shadow: 0 2px 5px 1px rgba(0,0,0,0.4);
+  border-radius: 5px;
+  cursor: pointer;
+  width: 20px;
+  float: right;
+  height: 20px;
+  margin-right: 20px;
+  align-items: center;
+  display: flex;
+}
+
+.navigation-container {
+  width: 300px;
+  background-color: antiquewhite;
+}
+
+.navigation-container ul {
+  padding-left: 10px;
+}
+.navigation-container ul li {
+  list-style: none;
+  text-align: left;
+  cursor: pointer;
+}
+.navigation-container .nav-item {
+  padding: 5px;
 }
 
 .error-type {

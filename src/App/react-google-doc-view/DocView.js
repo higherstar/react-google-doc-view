@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './index.css';
 
 const DocView = ({ docContent }) => {
-  const { docSectionList, docSections, docFrameStyle, totalElementCount } = docContent;
+  const { docSectionList, totalElementCount } = docContent;
   const [curNodeId, setCurNodeId] = useState(docSectionList.sections[0].id);
   const [curNodeContent, setCurNodeContent] = useState(docSectionList.sections[0]);
-
+  const [showNavigationList, setShowNavigationList] = useState(false);
+  
   const findInSection = (nodeId, section) => {
     if (section.id === nodeId) {
       return section;
@@ -70,7 +71,6 @@ const DocView = ({ docContent }) => {
     let nodeContent = {};
     do {
       nodeId++;
-      console.log(nodeId);
       nodeContent = findInList(nodeId);
     } while ((!nodeContent || !nodeContent.level) && nodeId < totalElementCount);
     if (nodeContent && nodeId < totalElementCount) {
@@ -142,12 +142,38 @@ const DocView = ({ docContent }) => {
     return nodeBody;
   };
   
+  const renderNavigationList = (node, index) => {
+    if (!node.slides) {
+      return node.title
+        ? <li className='nav-item' onClick={() => {
+            setCurNodeContent(node);
+            setCurNodeId(node.id);
+          }}>{node.title}</li>
+        : null;
+    }
+    return (
+      <li className='nav-item' onClick={() => {
+        setCurNodeContent(node);
+        setCurNodeId(node.id);
+      }}>
+        {index}. {node.title}
+        {node.slides && node.slides.length > 0 &&
+          <ul>{node.slides.map((slide, index1) =>
+            renderNavigationList(slide, index1))}
+          </ul>
+        }
+      </li>
+    );
+  };
+  
   return (
     <div className='doc-view-container'>
       <div className='page-container'>
         <div className='doc-view-frame-container'>
           <div className='doc-view-frame-header'>
-  
+            <div className='btn-show-list' onClick={() => setShowNavigationList(true)}>
+              <svg width="20" height="16" viewBox="0 0 20 18" fill="white" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="1" fill="black"></rect><rect y="8" width="20" height="1" fill="black"></rect><rect y="16" width="20" height="1" fill="black"></rect></svg>
+            </div>
           </div>
           <div className='doc-view-frame'>
             {curNodeContent && renderNode(curNodeContent).map(item => item)}
@@ -158,6 +184,12 @@ const DocView = ({ docContent }) => {
           </div>
         </div>
       </div>
+      {showNavigationList &&
+      <div className='navigation-container'>
+        <ul>
+          {docSectionList.sections.map((section, index) => renderNavigationList(section, index + 1))}
+        </ul>
+      </div>}
     </div>
   )
 };

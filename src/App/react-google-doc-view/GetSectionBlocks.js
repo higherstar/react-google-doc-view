@@ -418,7 +418,7 @@ export const getSectionBlocks = data => {
               type: 'slide',
               html: child.nodes,
               text: text,
-              wordCount: text && text.split(/\s+/).length || 0,
+              wordCount: text ? text.split(/\s+/).length : 0,
             };
             nodes.push(leaf);
           }
