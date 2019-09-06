@@ -26,8 +26,14 @@
   height: 50px;
   background: #F7F7F7;
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   align-items: center;
+}
+
+.doc-view-progress {
+  width: 50%;
+  display: flex;
+  align-self: center;
 }
 
 .doc-view-frame-controller {
@@ -109,6 +115,14 @@
 }
 .navigation-container .nav-item.active + div {
   background-color: white;
+}
+
+.react-sweet-progress {
+  margin-left: 20px;
+  width: 90%;
+}
+.react-sweet-progress-line-inner {
+  background-color: #0054A9;
 }
 
 .error-type {

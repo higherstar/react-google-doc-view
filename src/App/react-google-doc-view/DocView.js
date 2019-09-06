@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Progress } from 'react-sweet-progress';
+import "react-sweet-progress/lib/style.css";
 import './index.css';
 
 const DocView = ({ docContent }) => {
@@ -7,6 +9,11 @@ const DocView = ({ docContent }) => {
   const [curNodeContent, setCurNodeContent] = useState(docSectionList.sections[0]);
   const [openState, setOpenState] = useState(false);
   const [showNavigationList, setShowNavigationList] = useState(false);
+  const [progress, setProgress] = useState(0);
+  
+  useEffect(() => {
+    setReadProgress();
+  }, [curNodeId]);
   
   const findInSection = (nodeId, section) => {
     if (section.id === nodeId) {
@@ -53,16 +60,27 @@ const DocView = ({ docContent }) => {
   const findParents = (node) => {
     let parents = [];
     let child = node;
-    while (child.level > 1) {
-      const parent = findParent(child.id, child.level);
-      if (parent) {
-        parents.push(parent);
-        child = parent;
-      } else {
-        break;
+    if (node.level === 1) {
+      parents.push(node);
+    } else {
+      while (child.level > 1) {
+        const parent = findParent(child.id, child.level);
+        if (parent) {
+          parents.push(parent);
+          child = parent;
+        } else {
+          break;
+        }
       }
     }
     return parents;
+  };
+  
+  const setReadProgress = () => {
+    let parents = findParents(curNodeContent);
+    let section = parents.find(item => item.level === 1);
+    let nthSection = docSectionList.sections.findIndex(item => section.id === item.id) + 1;
+    setProgress((nthSection - 1)/docSectionList.sections.length*100);
   };
   
   const navigateToPrev = () => {
@@ -162,7 +180,8 @@ const DocView = ({ docContent }) => {
     }
     let levelStr = pIndex ? `${pIndex}.${cIndex}` : cIndex;
     let childIndex = 0;
-    let curSection = findParents(curNodeContent).find(item => item.level === 1);
+    let parents = findParents(curNodeContent);
+    let curSection = parents.find(item => item.level === 1);
     
     return (
       <React.Fragment key={cIndex}>
@@ -174,6 +193,10 @@ const DocView = ({ docContent }) => {
               setCurNodeContent(node);
               setCurNodeId(node.id);
               setOpenState(node.isOpen);
+              if (parents) {
+                const sectionLevel = levelStr.toString().split('.')[0];
+                setProgress((sectionLevel - 1)/docSectionList.sections.length*100);
+              }
               e.stopPropagation();
             }}
           >
@@ -202,6 +225,10 @@ const DocView = ({ docContent }) => {
       <div className='page-container'>
         <div className='doc-view-frame-container'>
           <div className='doc-view-frame-header'>
+            <div className='doc-view-progress'>
+              <Progress percent={progress} status="warning" />
+              <div> {progress/100*docSectionList.sections.length}/{docSectionList.sections.length}</div>
+            </div>
             <div className='btn-show-list' onClick={() => setShowNavigationList(!showNavigationList)}>
               <svg width="20" height="16" viewBox="0 0 20 18" fill="white" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="1" fill="black"></rect><rect y="8" width="20" height="1" fill="black"></rect><rect y="16" width="20" height="1" fill="black"></rect></svg>
             </div>
