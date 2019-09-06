@@ -162,12 +162,13 @@ const DocView = ({ docContent }) => {
     }
     let levelStr = pIndex ? `${pIndex}.${cIndex}` : cIndex;
     let childIndex = 0;
+    let curSection = findParents(curNodeContent).find(item => item.level === 1);
     
     return (
       <React.Fragment key={cIndex}>
         <React.Fragment>
           <li
-            className={`nav-item ${curNodeId === node.id ? 'active' : ''}`}
+            className={`nav-item ${ (curSection && curSection.id === node.id) || curNodeId === node.id ? 'active' : ''}`}
             onClick={(e) => {
               node.isOpen = !node.isOpen;
               setCurNodeContent(node);

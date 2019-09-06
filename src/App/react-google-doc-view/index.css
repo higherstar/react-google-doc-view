@@ -107,6 +107,9 @@
 .navigation-container .nav-item.active {
   background-color: white;
 }
+.navigation-container .nav-item.active + div {
+  background-color: white;
+}
 
 .error-type {
   background-color: #ffcd85;
