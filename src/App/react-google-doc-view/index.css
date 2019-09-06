@@ -73,11 +73,28 @@
 
 .navigation-container {
   width: 300px;
-  background-color: antiquewhite;
+  background: white;
+  border: solid 2px;
 }
 
 .navigation-container ul {
-  padding-left: 10px;
+  padding-left: 15px;
+}
+.navigation-container > ul {
+  padding: 0;
+  margin: 20px 10px;
+  border: solid 2px;
+  background-color: #C1C1C1;
+}
+.navigation-container > ul > li {
+  border-top: solid 1px;
+  border-bottom: solid 1px;
+}
+.navigation-container > ul > li:first-child {
+  border-top: none;
+}
+.navigation-container > ul > li:last-child {
+  border-bottom: none;
 }
 .navigation-container ul li {
   list-style: none;
@@ -86,6 +103,9 @@
 }
 .navigation-container .nav-item {
   padding: 5px;
+}
+.navigation-container .nav-item.active {
+  background-color: white;
 }
 
 .error-type {
