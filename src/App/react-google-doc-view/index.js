@@ -79,7 +79,7 @@ const ReactGoogleDocView = ({ documentId }) => {
         }
       }
     }
-  }, [docContent]);
+  }, [docContent, accessToken]);
 
   return (
     <React.Fragment>

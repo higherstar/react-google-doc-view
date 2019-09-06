@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './index.css';
 
 const DocView = ({ docContent }) => {
@@ -7,10 +7,6 @@ const DocView = ({ docContent }) => {
   const [curNodeContent, setCurNodeContent] = useState(docSectionList.sections[0]);
   const [openState, setOpenState] = useState(false);
   const [showNavigationList, setShowNavigationList] = useState(false);
-  
-  useEffect(() => {
-    console.log('node changed');
-  }, [openState]);
   
   const findInSection = (nodeId, section) => {
     if (section.id === nodeId) {
@@ -63,7 +59,6 @@ const DocView = ({ docContent }) => {
         parents.push(parent);
         child = parent;
       } else {
-        console.log('no parent');
         break;
       }
     }
