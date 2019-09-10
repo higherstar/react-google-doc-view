@@ -4,7 +4,7 @@ import "react-sweet-progress/lib/style.css";
 import './index.css';
 
 const DocView = ({ docContent }) => {
-  const { docSectionList, totalElementCount } = docContent;
+  const { docSectionList, totalCount } = docContent;
   const [curNodeId, setCurNodeId] = useState(docSectionList.sections[0].id);
   const [curNodeContent, setCurNodeContent] = useState(docSectionList.sections[0]);
   const [openState, setOpenState] = useState(false);
@@ -93,6 +93,17 @@ const DocView = ({ docContent }) => {
     if (nodeContent && nodeId >= 0) {
       setCurNodeContent(nodeContent);
       setCurNodeId(nodeId);
+    } else if (nodeId < 0) {
+      nodeId = totalCount - 1;
+      while (nodeId > 0) {
+        nodeContent = findInList(nodeId);
+        if (nodeContent && nodeContent.level) {
+          break;
+        }
+        nodeId--;
+      }
+      setCurNodeContent(nodeContent);
+      setCurNodeId(nodeId);
     }
   };
   
@@ -102,10 +113,13 @@ const DocView = ({ docContent }) => {
     do {
       nodeId++;
       nodeContent = findInList(nodeId);
-    } while ((!nodeContent || !nodeContent.level) && nodeId < totalElementCount);
-    if (nodeContent && nodeId < totalElementCount) {
+    } while ((!nodeContent || !nodeContent.level) && nodeId < totalCount);
+    if (nodeContent && nodeId < totalCount) {
       setCurNodeContent(nodeContent);
       setCurNodeId(nodeId);
+    } else if (nodeId >= totalCount) {
+      setCurNodeId(docSectionList.sections[0].id);
+      setCurNodeContent(docSectionList.sections[0]);
     }
   };
   
@@ -113,7 +127,7 @@ const DocView = ({ docContent }) => {
     let nodeTitle = '';
     let level = nodeContent.level;
     let title = nodeContent.title;
-    // render title
+
     switch (level) {
       case 1:
         nodeTitle = <h1 key={key} style={{fontSize: '32px'}}>{title}</h1>;
@@ -147,8 +161,8 @@ const DocView = ({ docContent }) => {
     
     // render title
     let nodeTitle = renderTitle(nodeContent, nodeContent.id);
-    if (level > 1) {
-      nodeBody = findParents(nodeContent).map(item => item.html);
+    if (level > 1 && curNodeId === nodeContent.id) {
+      nodeBody = findParents(nodeContent).map((item, key) => renderTitle(item, key));
       nodeBody.reverse();
     }
     if (nodeTitle) nodeBody.push(nodeTitle);

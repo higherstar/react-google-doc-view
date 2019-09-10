@@ -424,9 +424,8 @@ export const getSectionBlocks = data => {
           const twig = {
             id: endPos,
             title: elementArr[endPos].paragraph.elements[0].textRun.content,
-            type: 'slide',
+            type: 'HEADING',
             level: tmpHeadingNum,
-            html: '',
             wordCount: 100,
             slides: children && children.nodes,
           };
@@ -453,8 +452,7 @@ export const getSectionBlocks = data => {
           ) {
             const leaf = {
               id: endPos,
-              title: '',
-              type: 'slide',
+              type: 'TEXT',
               html: child.nodes,
               text,
               wordCount: (text && text.split(/\s+/).length) || 0,
@@ -474,8 +472,7 @@ export const getSectionBlocks = data => {
               if (child) {
                 const leaf = {
                   id: endPos,
-                  title: '',
-                  type: 'text',
+                  type: 'TEXT',
                   html: child.nodes,
                   text,
                   wordCount: (text && text.split(/\s+/).length) || 0,
@@ -493,7 +490,6 @@ export const getSectionBlocks = data => {
               title: '',
               type: questionStarted ? 'QUESTION' : videoStarted ? 'VIDEO' : 'SLIDE',
               level: curLevel + 1,
-              html: '',
               wordCount: 100,
               slides: slideNodes
             };
@@ -503,22 +499,6 @@ export const getSectionBlocks = data => {
           }
         }
       }
-    } else if (isSlideStarted) {
-      // console.log('*******', text, endPos);
-      // const children = getSectionList(endPos);
-      // const twig = {
-      //   id: endPos,
-      //   title: elementArr[endPos].paragraph.elements[0].textRun.content,
-      //   type: videoStarted ? 'VIDEO' : questionStarted ? 'QUESTION' : 'SLIDE',
-      //   level: null,
-      //   html: '',
-      //   wordCount: 100,
-      //   slides: children && children.nodes,
-      // };
-      // if (children) {
-      //   ({endPos} = children);
-      //   nodes.push(twig);
-      // }
     } else {
       return {nodes: renderElements(elementArr[startPos], 'leaf'), endPos};
     }
@@ -771,6 +751,7 @@ export const getSectionBlocks = data => {
       id: pos,
       title:
         elementArr[pos].paragraph && elementArr[pos].paragraph.elements[0].textRun.content,
+      type: 'SECTION',
       level: 1,
       slides: node.nodes,
     });
@@ -783,6 +764,6 @@ export const getSectionBlocks = data => {
     docSectionList: sectionList,
     docFrameStyle: frameStyle,
     errors,
-    totalElementCount: elementArr.length,
+    totalCount: elementArr.length,
   };
 };
