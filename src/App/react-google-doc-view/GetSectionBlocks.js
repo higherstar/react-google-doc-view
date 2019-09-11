@@ -1,5 +1,4 @@
 import React from 'react';
-import ReactDOM from 'react-dom'
 import { renderToString } from 'react-dom/server'
 import {
   getFrameStyle,
@@ -463,7 +462,7 @@ export const getSectionBlocks = data => {
             wordCount,
             level: headingNum
           };
-          newSection.slides.push(slide);
+          newSection.slides.push({ ...slide, sectionTitle });
           slideList.push({ ...slide, sectionTitle });
           curPos = endPos;
         }
