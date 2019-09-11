@@ -16,7 +16,6 @@ export const getSectionBlocks = data => {
   const {inlineObjects} = data;
   const {lists} = data;
   let sectionBlocks = [];
-  const slideList = [];
   const sectionStructure = {
     title: data.title,
     sections: [],
@@ -462,8 +461,7 @@ export const getSectionBlocks = data => {
             wordCount,
             level: headingNum
           };
-          newSection.slides.push({ ...slide, sectionTitle });
-          slideList.push({ ...slide, sectionTitle });
+          newSection.slides.push(slide);
           curPos = endPos;
         }
         sectionStructure.sections.push(newSection);
@@ -711,7 +709,6 @@ export const getSectionBlocks = data => {
   return {
     docSections: sectionBlocks,
     docSectionStructure: sectionStructure,
-    docSlideList: slideList,
     docFrameStyle: frameStyle,
     errors
   };

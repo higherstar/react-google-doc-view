@@ -4,17 +4,30 @@ import "react-sweet-progress/lib/style.css";
 import './index.css';
 
 const DocView = ({ docContent }) => {
-  const { docSlideList, docSectionStructure } = docContent;
+  const { docSectionStructure } = docContent;
+  const [docSlideList, setDocSlideList] = useState([]);
   const [curNodeId, setCurNodeId] = useState(0);
   const [showNavigationList, setShowNavigationList] = useState(false);
   const [progress, setProgress] = useState(0);
   
   useEffect(() => {
+    getDocSlideList();
+  }, []);
+  
+  useEffect(() => {
     setReadProgress();
   }, [curNodeId]);
   
+  const getDocSlideList = () => {
+    let slideList = [];
+    docSectionStructure.sections.forEach(section => {
+      section.slides.forEach(slide => slideList.push({ ...slide, sectionTitle: section.title }));
+    });
+    setDocSlideList(slideList);
+  };
+  
   const setReadProgress = () => {
-    setProgress(parseInt(curNodeId / docSlideList.length * 100));
+    docSlideList.length && setProgress(parseInt(curNodeId / docSlideList.length * 100));
   };
   
   const navigateToPrev = () => {
@@ -74,7 +87,7 @@ const DocView = ({ docContent }) => {
     if (level !== 1) {
       let tNodeId = curNodeId - 1;
       let tLevel = level;
-      while (docSlideList[tNodeId].level > 1) {
+      while (tNodeId >= 0 && docSlideList[tNodeId].level > 1) {
         const tSlide = docSlideList[tNodeId];
         tSlide.level < tLevel && nodeBody.push(renderTitle(tSlide.level, tSlide.title, `title-${tNodeId}-${tSlide.level}`));
         if (tSlide.level > tLevel) break;
@@ -152,7 +165,7 @@ const DocView = ({ docContent }) => {
             </div>
           </div>
           <div className='doc-view-frame'>
-            {renderNode(docSlideList[curNodeId])}
+            {docSlideList.length && renderNode(docSlideList[curNodeId])}
           </div>
           <div className='doc-view-frame-controller'>
             <div onClick={() => navigateToPrev()}>Previous</div>
