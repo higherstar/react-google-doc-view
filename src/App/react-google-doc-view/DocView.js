@@ -4,9 +4,9 @@ import "react-sweet-progress/lib/style.css";
 import './index.css';
 
 const DocView = ({ docContent }) => {
-  const { docSectionList, totalCount } = docContent;
-  const [curNodeId, setCurNodeId] = useState(docSectionList.sections[0].id);
-  const [curNodeContent, setCurNodeContent] = useState(docSectionList.sections[0]);
+  const { docSlideList } = docContent;
+  const [curNodeId, setCurNodeId] = useState(0);
+  const [curNodeContent, setCurNodeContent] = useState(docSlideList[0]);
   const [openState, setOpenState] = useState(false);
   const [showNavigationList, setShowNavigationList] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -15,118 +15,28 @@ const DocView = ({ docContent }) => {
     setReadProgress();
   }, [curNodeId]);
   
-  const findInSection = (nodeId, section) => {
-    if (section.id === nodeId) {
-      return section;
-    } else if (!section.slides) {
-      return false;
-    }
-    let searchedNode = null;
-    for (let i = 0; i < section.slides.length; i++) {
-      searchedNode = findInSection(nodeId, section.slides[i]);
-      if (searchedNode) {
-        break;
-      }
-    }
-    return searchedNode;
-  };
-  
-  const findInList = (nodeId) => {
-    let searchResult = '';
-    for (let i = 0; i < docSectionList.sections.length; i++) {
-      const res = findInSection(nodeId, docSectionList.sections[i]);
-      if (res) {
-        searchResult = res;
-        break;
-      }
-    }
-    return searchResult;
-  };
-  
-  const findParent = (curNodeId, curNodeLevel) => {
-    let nodeId = curNodeId;
-    let nodeContent = {};
-    do {
-      nodeId--;
-      nodeContent = findInList(nodeId);
-    } while ((!nodeContent || !nodeContent.level || nodeContent.level >= curNodeLevel) && nodeId >= 0);
-    if (nodeContent && nodeId >= 0) {
-      return nodeContent;
-    } else {
-      return false;
-    }
-  };
-  
-  const findParents = (node) => {
-    let parents = [];
-    let child = node;
-    if (node.level === 1) {
-      parents.push(node);
-    } else {
-      while (child.level > 1) {
-        const parent = findParent(child.id, child.level);
-        if (parent) {
-          parents.push(parent);
-          child = parent;
-        } else {
-          break;
-        }
-      }
-    }
-    return parents;
-  };
-  
   const setReadProgress = () => {
-    let parents = findParents(curNodeContent);
-    let section = parents.find(item => item.level === 1);
-    let nthSection = docSectionList.sections.findIndex(item => section.id === item.id) + 1;
-    setProgress((nthSection - 1)/docSectionList.sections.length*100);
+    setProgress(curNodeId / docSlideList.length * 100 );
   };
   
   const navigateToPrev = () => {
-    let nodeId = curNodeId;
-    let nodeContent = {};
-    do {
-      nodeId--;
-      nodeContent = findInList(nodeId);
-    } while ((!nodeContent || !nodeContent.level) && nodeId >= 0);
-    if (nodeContent && nodeId >= 0) {
-      setCurNodeContent(nodeContent);
-      setCurNodeId(nodeId);
-    } else if (nodeId < 0) {
-      nodeId = totalCount - 1;
-      while (nodeId > 0) {
-        nodeContent = findInList(nodeId);
-        if (nodeContent && nodeContent.level) {
-          break;
-        }
-        nodeId--;
-      }
-      setCurNodeContent(nodeContent);
-      setCurNodeId(nodeId);
+    let nodeId = curNodeId - 1;
+    if (nodeId < 0) {
+      nodeId = docSlideList.length - 1;
     }
+    setCurNodeId(nodeId);
   };
   
   const navigateToNext = () => {
-    let nodeId = curNodeId;
-    let nodeContent = {};
-    do {
-      nodeId++;
-      nodeContent = findInList(nodeId);
-    } while ((!nodeContent || !nodeContent.level) && nodeId < totalCount);
-    if (nodeContent && nodeId < totalCount) {
-      setCurNodeContent(nodeContent);
-      setCurNodeId(nodeId);
-    } else if (nodeId >= totalCount) {
-      setCurNodeId(docSectionList.sections[0].id);
-      setCurNodeContent(docSectionList.sections[0]);
+    let nodeId = curNodeId + 1;
+    if (nodeId >= docSlideList.length) {
+      nodeId = 0;
     }
+    setCurNodeId(nodeId);
   };
   
-  const renderTitle = (nodeContent, key) => {
+  const renderTitle = (level, title, key) => {
     let nodeTitle = '';
-    let level = nodeContent.level;
-    let title = nodeContent.title;
 
     switch (level) {
       case 1:
@@ -155,25 +65,22 @@ const DocView = ({ docContent }) => {
     return nodeTitle;
   };
   
-  const renderNode = (nodeContent) => {
-    let level = nodeContent.level;
+  const renderNode = (node) => {
+    let level = node.level;
+    let title = node.title;
+    let sectionTitle = node.sectionTitle;
     let nodeBody = [];
     
     // render title
-    let nodeTitle = renderTitle(nodeContent, nodeContent.id);
-    if (level > 1 && curNodeId === nodeContent.id) {
-      nodeBody = findParents(nodeContent).map((item, key) => renderTitle(item, key));
-      nodeBody.reverse();
+    let nodeTitle = renderTitle(level, title, `title-${curNodeId}-${level}`);
+    if (level !== 1) {
+      nodeBody.push(renderTitle(level, sectionTitle, `title-${curNodeId}-1`));
     }
     if (nodeTitle) nodeBody.push(nodeTitle);
     
     // render content
-    if (nodeContent.slides) {
-      const tNodes = nodeContent.slides.map(slide => renderNode(slide));
-      nodeBody = [...nodeBody, ...tNodes];
-    } else {
-      nodeBody.push(nodeContent.content);
-    }
+    const tNodes = node.content.map(slide => <div dangerouslySetInnerHTML={slide.content} />);
+    nodeBody = [...nodeBody, ...tNodes];
     return nodeBody;
   };
   
@@ -194,41 +101,39 @@ const DocView = ({ docContent }) => {
     }
     let levelStr = pIndex ? `${pIndex}.${cIndex}` : cIndex;
     let childIndex = 0;
-    let parents = findParents(curNodeContent);
-    let curSection = parents.find(item => item.level === 1);
     
     return (
       <React.Fragment key={cIndex}>
         <React.Fragment>
-          <li
-            className={`nav-item ${ (curSection && curSection.id === node.id) || curNodeId === node.id ? 'active' : ''}`}
-            onClick={(e) => {
-              node.isOpen = !node.isOpen;
-              setCurNodeContent(node);
-              setCurNodeId(node.id);
-              setOpenState(node.isOpen);
-              if (parents) {
-                const sectionLevel = levelStr.toString().split('.')[0];
-                setProgress((sectionLevel - 1)/docSectionList.sections.length*100);
-              }
-              e.stopPropagation();
-            }}
-          >
-            {levelStr}. {node.title}
-          </li>
-          <div>
-            {node.isOpen && node.slides && node.slides.length > 0 &&
-            <ul>
-              {node.slides.map((slide) => {
-                if (slide.title) {
-                  childIndex++;
-                  return renderNavigationList(slide, levelStr, childIndex);
-                }
-                return null;
-              })}
-            </ul>
-            }
-          </div>
+          {/*<li*/}
+            {/*className={`nav-item ${ (curSection && curSection.id === node.id) || curNodeId === node.id ? 'active' : ''}`}*/}
+            {/*onClick={(e) => {*/}
+              {/*node.isOpen = !node.isOpen;*/}
+              {/*setCurNodeContent(node);*/}
+              {/*setCurNodeId(node.id);*/}
+              {/*setOpenState(node.isOpen);*/}
+              {/*if (parents) {*/}
+                {/*const sectionLevel = levelStr.toString().split('.')[0];*/}
+                {/*setProgress((sectionLevel - 1)/docSectionList.sections.length*100);*/}
+              {/*}*/}
+              {/*e.stopPropagation();*/}
+            {/*}}*/}
+          {/*>*/}
+            {/*{levelStr}. {node.title}*/}
+          {/*</li>*/}
+          {/*<div>*/}
+            {/*{node.isOpen && node.slides && node.slides.length > 0 &&*/}
+            {/*<ul>*/}
+              {/*{node.slides.map((slide) => {*/}
+                {/*if (slide.title) {*/}
+                  {/*childIndex++;*/}
+                  {/*return renderNavigationList(slide, levelStr, childIndex);*/}
+                {/*}*/}
+                {/*return null;*/}
+              {/*})}*/}
+            {/*</ul>*/}
+            {/*}*/}
+          {/*</div>*/}
         </React.Fragment>
       </React.Fragment>
     );
@@ -241,14 +146,14 @@ const DocView = ({ docContent }) => {
           <div className='doc-view-frame-header'>
             <div className='doc-view-progress'>
               <Progress percent={progress} status="warning" />
-              <div> {progress/100*docSectionList.sections.length}/{docSectionList.sections.length}</div>
+              <div> {progress/100*docSlideList.length}/{docSlideList.length}</div>
             </div>
             <div className='btn-show-list' onClick={() => setShowNavigationList(!showNavigationList)}>
               <svg width="20" height="16" viewBox="0 0 20 18" fill="white" xmlns="http://www.w3.org/2000/svg"><rect width="20" height="1" fill="black"></rect><rect y="8" width="20" height="1" fill="black"></rect><rect y="16" width="20" height="1" fill="black"></rect></svg>
             </div>
           </div>
           <div className='doc-view-frame'>
-            {curNodeContent && renderNode(curNodeContent).map(item => item)}
+            {docSlideList[curNodeId].map(item => renderNode(item))}
           </div>
           <div className='doc-view-frame-controller'>
             <div onClick={() => navigateToPrev()}>Previous</div>
@@ -256,12 +161,12 @@ const DocView = ({ docContent }) => {
           </div>
         </div>
       </div>
-      {showNavigationList &&
-      <div className='navigation-container'>
-        <ul>
-          {docSectionList.sections.map((section, index) => renderNavigationList(section, null, index + 1))}
-        </ul>
-      </div>}
+      {/*{showNavigationList &&*/}
+      {/*<div className='navigation-container'>*/}
+        {/*<ul>*/}
+          {/*{docSectionList.sections.map((section, index) => renderNavigationList(section, null, index + 1))}*/}
+        {/*</ul>*/}
+      {/*</div>}*/}
     </div>
   )
 };

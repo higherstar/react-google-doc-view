@@ -1,4 +1,6 @@
 import React from 'react';
+import ReactDOM from 'react-dom'
+import { renderToString } from 'react-dom/server'
 import {
   getFrameStyle,
   getNamedStyle,
@@ -15,7 +17,8 @@ export const getSectionBlocks = data => {
   const {inlineObjects} = data;
   const {lists} = data;
   let sectionBlocks = [];
-  const sectionList = {
+  const slideList = [];
+  const sectionStructure = {
     title: data.title,
     sections: [],
   };
@@ -412,7 +415,7 @@ export const getSectionBlocks = data => {
         break;
       }
       wordCount += (params.text && params.text.split(/\s+/).length) || 0;
-      leaves.push(renderElements(elementArr[curPos], curPos));
+      leaves.push(renderToString(renderElements(elementArr[curPos], curPos)));
       curPos++;
     }
     return { content: leaves, wordCount, endPos: curPos };
@@ -432,8 +435,9 @@ export const getSectionBlocks = data => {
       } = getSlideParams(curPos);
       
       if (headingNum > 0 || videoStarted || questionStarted) {
+        const sectionTitle = headingNum > 0 ? text : elementArr[curPos + 1].paragraph.elements[0].textRun.content;
         let newSection = {
-          title: headingNum > 0 ? text : elementArr[curPos + 1].paragraph.elements[0].textRun.content,
+          title: sectionTitle,
           type: videoStarted ? 'video' : questionStarted ? 'question' : 'slideshow',
           slides: []
         };
@@ -450,7 +454,7 @@ export const getSectionBlocks = data => {
           }
           headingNum = getHeadingNum(elementArr[curPos]);
           const { content, wordCount, endPos } = getSlideContent(curPos + 1);
-          newSection.slides.push({
+          const slide = {
             title:
               headingNum && params.text ?
                 params.text :
@@ -458,10 +462,12 @@ export const getSectionBlocks = data => {
             content,
             wordCount,
             level: headingNum
-          });
+          };
+          newSection.slides.push(slide);
+          slideList.push({ ...slide, sectionTitle });
           curPos = endPos;
         }
-        sectionList.sections.push(newSection);
+        sectionStructure.sections.push(newSection);
       }
       curPos++;
     }
@@ -705,9 +711,9 @@ export const getSectionBlocks = data => {
   
   return {
     docSections: sectionBlocks,
-    docSectionList: sectionList,
+    docSectionStructure: sectionStructure,
+    docSlideList: slideList,
     docFrameStyle: frameStyle,
-    errors,
-    totalCount: elementArr.length,
+    errors
   };
 };
