@@ -172,7 +172,7 @@ const DocView = ({ docContent }) => {
       const tNodes = nodeContent.slides.map(slide => renderNode(slide));
       nodeBody = [...nodeBody, ...tNodes];
     } else {
-      nodeBody.push(nodeContent.html);
+      nodeBody.push(nodeContent.content);
     }
     return nodeBody;
   };

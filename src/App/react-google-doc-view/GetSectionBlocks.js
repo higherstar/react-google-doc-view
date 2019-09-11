@@ -394,115 +394,77 @@ export const getSectionBlocks = data => {
     };
   };
   
-  const getSectionList = (startPos, curLevel) => {
-    if (startPos >= elementArr.length) {
-      return {nodes: null, endPos: startPos + 1};
+  const getSlideContent = (startPos) => {
+    let leaves = [];
+    let wordCount = 0;
+    let videoEnded = false;
+    let questionEnded = false;
+    let slideCut = false;
+    let curPos = startPos;
+    let headingNum = getHeadingNum(elementArr[startPos]);
+    while (!videoEnded && !questionEnded && !slideCut && curPos < elementArr.length && headingNum < 1) {
+      const params = getSlideParams(curPos);
+      videoEnded = params.videoEnded;
+      questionEnded = params.questionEnded;
+      slideCut = params.slideCut;
+      headingNum = getHeadingNum(elementArr[curPos]);
+      if (videoEnded || questionEnded || slideCut || headingNum > 0) {
+        break;
+      }
+      wordCount += (params.text && params.text.split(/\s+/).length) || 0;
+      leaves.push(renderElements(elementArr[curPos], curPos));
+      curPos++;
     }
-    
-    if (!elementArr[startPos] || elementArr[startPos] === 'undefined') {
-      return {nodes: null, endPos: startPos + 1};
-    }
-    
-    const headingNum = getHeadingNum(elementArr[startPos]);
-    let endPos = startPos + 1;
-    let tmpHeadingNum = -1;
-    let nodes = [];
-    
-    const {videoStarted, questionStarted} = getSlideParams(endPos);
-    const isSlideStarted = videoStarted || questionStarted;
-    if (headingNum > 0) {
-      while (
-        (tmpHeadingNum === -1 || tmpHeadingNum > headingNum) &&
-        endPos < elementArr.length
-        ) {
-        tmpHeadingNum = getHeadingNum(elementArr[endPos]);
-        if (tmpHeadingNum > 0) {
-          if (tmpHeadingNum <= headingNum) {
+    return { content: leaves, wordCount, endPos: curPos };
+  };
+  
+  const getSectionList = () => {
+    let curPos = 0;
+    while (curPos < elementArr.length) {
+      let headingNum = getHeadingNum(elementArr[curPos]);
+      let {
+        text,
+        videoStarted,
+        videoEnded,
+        questionStarted,
+        questionEnded,
+        slideCut
+      } = getSlideParams(curPos);
+      
+      if (headingNum > 0 || videoStarted || questionStarted) {
+        let newSection = {
+          title: headingNum > 0 ? text : elementArr[curPos + 1].paragraph.elements[0].textRun.content,
+          type: videoStarted ? 'video' : questionStarted ? 'question' : 'slideshow',
+          slides: []
+        };
+        if (headingNum < 1) curPos++;
+        while (!videoEnded && !questionEnded && !slideCut && curPos < elementArr.length) {
+          const params = getSlideParams(curPos);
+          questionStarted = params.questionStarted;
+          videoStarted = params.videoStarted;
+          videoEnded = params.videoEnded;
+          questionEnded = params.questionEnded;
+          slideCut = params.slideCut;
+          if (questionStarted || videoStarted || slideCut || questionEnded || videoEnded) {
             break;
           }
-          const children = getSectionList(endPos, tmpHeadingNum + 1);
-          const twig = {
-            id: endPos,
-            title: elementArr[endPos].paragraph.elements[0].textRun.content,
-            type: 'HEADING',
-            level: tmpHeadingNum,
-            wordCount: 100,
-            slides: children && children.nodes,
-          };
-          if (children) {
-            ({endPos} = children);
-            nodes.push(twig);
-          }
-        } else {
-          const child = getSectionList(endPos, curLevel + 1);
-          const {
-            text,
-            videoStarted,
-            videoEnded,
-            questionStarted,
-            questionEnded,
-            slideCut
-          } = getSlideParams(endPos);
-          if (
-            !videoStarted &&
-            !videoEnded &&
-            !questionStarted &&
-            !questionEnded &&
-            !slideCut
-          ) {
-            const leaf = {
-              id: endPos,
-              type: 'TEXT',
-              html: child.nodes,
-              text,
-              wordCount: (text && text.split(/\s+/).length) || 0,
-            };
-            nodes.push(leaf);
-            ({endPos} = child);
-          } else if (questionStarted || videoStarted) {
-            endPos++;
-            let slideNodes = [];
-            let {
-              videoEnded,
-              questionEnded,
-              text
-            } = getSlideParams(endPos);
-            while (!questionEnded && !videoEnded && endPos < elementArr.length) {
-              const child = getSectionList(endPos, curLevel + 1);
-              if (child) {
-                const leaf = {
-                  id: endPos,
-                  type: 'TEXT',
-                  html: child.nodes,
-                  text,
-                  wordCount: (text && text.split(/\s+/).length) || 0,
-                };
-                slideNodes.push(leaf);
-              }
-              ({endPos} = child);
-              const params = getSlideParams(endPos);
-              videoEnded = params.videoEnded;
-              questionEnded = params.questionEnded;
-              text = params.text;
-            }
-            const twig = {
-              id: endPos,
-              title: '',
-              type: questionStarted ? 'QUESTION' : videoStarted ? 'VIDEO' : 'SLIDE',
-              level: curLevel + 1,
-              wordCount: 100,
-              slides: slideNodes
-            };
-            nodes.push(twig);
-          } else {
-            ({endPos} = child);
-          }
+          headingNum = getHeadingNum(elementArr[curPos]);
+          const { content, wordCount, endPos } = getSlideContent(curPos + 1);
+          newSection.slides.push({
+            title:
+              headingNum && params.text ?
+                params.text :
+                elementArr[curPos + 1].paragraph.elements[0].textRun.content,
+            content,
+            wordCount,
+            level: headingNum
+          });
+          curPos = endPos;
         }
+        sectionList.sections.push(newSection);
       }
-    } else {
-      return {nodes: renderElements(elementArr[startPos], 'leaf'), endPos};
+      curPos++;
     }
-    return {nodes, endPos};
   };
   
   const getSections = () => {
@@ -738,25 +700,7 @@ export const getSectionBlocks = data => {
   
   // get section list structure
   console.time('building structure');
-  let node = {};
-  let pos = 0;
-  // make sure that the document starts with heading - ignore objects at the start of document which are none heading
-  while (getHeadingNum(elementArr[pos]) === -1) {
-    pos += 1;
-  }
-  
-  do {
-    node = getSectionList(pos, 1);
-    sectionList.sections.push({
-      id: pos,
-      title:
-        elementArr[pos].paragraph && elementArr[pos].paragraph.elements[0].textRun.content,
-      type: 'SECTION',
-      level: 1,
-      slides: node.nodes,
-    });
-    pos = node.endPos;
-  } while (getHeadingNum(elementArr[pos]) === 1);
+  getSectionList();
   console.timeEnd('building structure');
   
   return {
