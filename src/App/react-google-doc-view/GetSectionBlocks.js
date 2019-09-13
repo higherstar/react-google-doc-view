@@ -475,7 +475,7 @@ export const getSectionBlocks = data => {
                                 : elementArr[curPos + 1].paragraph.elements[0].textRun.content,
                         content,
                         wordCount,
-                        level: headingNum,
+                        level: headingNum > 0 ? headingNum : 1,
                     };
                     newSection.slides.push(slide);
                     curPos = endPos;
