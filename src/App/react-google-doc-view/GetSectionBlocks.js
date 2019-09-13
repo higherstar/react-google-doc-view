@@ -9,7 +9,6 @@ import {
 } from './operations';
 
 export const getSectionBlocks = data => {
-    // console.log('processing data', data);
     const elementArr = data.body.content;
     const { documentStyle } = data;
     let namedStyles = data.namedStyles.styles;

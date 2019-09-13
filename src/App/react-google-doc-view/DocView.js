@@ -10,10 +10,10 @@ const DocView = ({ docContent }) => {
     const [showNavigationList, setShowNavigationList] = useState(false);
     const [progress, setProgress] = useState(0);
     const [docSlideList, setDocSlideList] = useState([]);
-    const [menuList, setMenuList] = useState([]);
+    const [menuList, setMenuList ] = useState([]);
 
     const setReadProgress = () => {
-        setProgress(parseInt((curNodeId / docSlideList.length) * 100, 10));
+        setProgress(parseInt(docSlideList.length ? (curNodeId / docSlideList.length) * 100 : '0', 10));
     };
 
     const findInNestedList = (list, nodeId, node) => {
@@ -87,7 +87,7 @@ const DocView = ({ docContent }) => {
             item => node.nodeId !== item.nodeId && node.nodeId.indexOf(item.nodeId) === 0,
         );
     };
-
+    
     const navigateToPrev = () => {
         let nodeId = curNodeId - 1;
         if (nodeId < 0) {
@@ -114,52 +114,52 @@ const DocView = ({ docContent }) => {
         let nodeTitle = '';
 
         switch (level) {
-            case 1:
-                nodeTitle = (
-                    <h1 key={key} style={{ fontSize: '32px' }}>
-                        {title}
-                    </h1>
-                );
-                break;
-            case 2:
-                nodeTitle = (
-                    <h2 key={key} style={{ fontSize: '24px' }}>
-                        {title}
-                    </h2>
-                );
-                break;
-            case 3:
-                nodeTitle = (
-                    <h3 key={key} style={{ fontSize: '20px' }}>
-                        {title}
-                    </h3>
-                );
-                break;
-            case 4:
-                nodeTitle = (
-                    <h4 key={key} style={{ fontSize: '18px' }}>
-                        {title}
-                    </h4>
-                );
-                break;
-            case 5:
-                nodeTitle = (
-                    <h5 key={key} style={{ fontSize: '16px' }}>
-                        {title}
-                    </h5>
-                );
-                break;
-            case 6:
-                nodeTitle = (
-                    <h6 key={key} style={{ fontSize: '14px' }}>
-                        {title}
-                    </h6>
-                );
-                break;
+        case 1:
+            nodeTitle = (
+                <h1 key={key} style={{ fontSize: '32px' }}>
+                    {title}
+                </h1>
+            );
+            break;
+        case 2:
+            nodeTitle = (
+                <h2 key={key} style={{ fontSize: '24px' }}>
+                    {title}
+                </h2>
+            );
+            break;
+        case 3:
+            nodeTitle = (
+                <h3 key={key} style={{ fontSize: '20px' }}>
+                    {title}
+                </h3>
+            );
+            break;
+        case 4:
+            nodeTitle = (
+                <h4 key={key} style={{ fontSize: '18px' }}>
+                    {title}
+                </h4>
+            );
+            break;
+        case 5:
+            nodeTitle = (
+                <h5 key={key} style={{ fontSize: '16px' }}>
+                    {title}
+                </h5>
+            );
+            break;
+        case 6:
+            nodeTitle = (
+                <h6 key={key} style={{ fontSize: '14px' }}>
+                    {title}
+                </h6>
+            );
+            break;
 
-            default:
-                nodeTitle = '';
-                break;
+        default:
+            nodeTitle = '';
+            break;
         }
         return nodeTitle;
     };
@@ -204,8 +204,8 @@ const DocView = ({ docContent }) => {
                         curNode.nodeId === item.nodeId
                             ? 'active focus'
                             : curNode.nodeId.indexOf(item.nodeId) === 0
-                            ? 'active'
-                            : ''
+                                ? 'active'
+                                : ''
                     }`}
                     onClick={e => {
                         const prevNode = docSlideList.find(
@@ -243,7 +243,7 @@ const DocView = ({ docContent }) => {
     // Set current progress
     useEffect(() => {
         setReadProgress();
-    }, [setReadProgress, curNodeId]);
+    }, [curNodeId]);
 
     // Generate slide list
     useEffect(() => {
