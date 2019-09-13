@@ -16,38 +16,55 @@ const DocView = ({ docContent }) => {
         setProgress(parseInt((curNodeId / docSlideList.length) * 100, 10));
     };
 
+    const findInNestedList = (list, nodeId, node) => {
+        if (list.nodeId === nodeId) {
+            list.slides.push(node);
+            return true;
+        }
+        for (let i = 0; i < list.slides.length; i += 1) {
+            if (findInNestedList(list.slides[i], nodeId, node)) {
+                return true;
+            }
+        }
+        return false;
+    };
+
     const getDocSlideList = () => {
         const slideList = [];
         docSectionStructure.sections.forEach((section, index1) => {
             section.slides.forEach((slide, index2) => {
-                let level = slide.level;
+                const { level } = slide;
                 let pos = slideList.length - 1;
                 // get parent index
                 let siblingCount = 0;
-                while (pos >= 0 && (slideList[pos].level + 1) !== level) {
+                while (pos >= 0 && slideList[pos].level + 1 !== level) {
                     if (slideList[pos].level === level) siblingCount += 1;
                     pos -= 1;
                 }
-                let parentNodeId =
-                        (pos >= 0 ?
-                            `${slideList[pos].nodeId}.${siblingCount + 1}` : '');
-                let nodeId =
-                    index2 === 0 ?
-                        (index1 + 1).toString() :
-                            (parentNodeId ? parentNodeId : (index2 + 1).toString());
-                slideList.push({ ...slide, sectionTitle: section.title, nodeId, isOpen: false, slides: [] });
+                const parentNodeId = pos >= 0 ? `${slideList[pos].nodeId}.${siblingCount + 1}` : '';
+                const nodeId =
+                    index2 === 0
+                        ? (index1 + 1).toString()
+                        : parentNodeId || (index2 + 1).toString();
+                slideList.push({
+                    ...slide,
+                    sectionTitle: section.title,
+                    nodeId,
+                    isOpen: false,
+                    slides: [],
+                });
             });
         });
         setDocSlideList(slideList);
         setCurNode(slideList[0]);
-        let tMenuList = [];
+        const tMenuList = [];
         slideList.forEach(item => {
             if (item.level === 1) {
                 tMenuList.push(item);
             } else {
-                let nodeId = item.nodeId;
-                let pNodeId = nodeId.substr(0, nodeId.length - 2);
-                for (let i = 0; i < tMenuList.length; i++) {
+                const { nodeId } = item;
+                const pNodeId = nodeId.substr(0, nodeId.length - 2);
+                for (let i = 0; i < tMenuList.length; i += 1) {
                     if (findInNestedList(tMenuList[i], pNodeId, item)) {
                         break;
                     }
@@ -56,18 +73,19 @@ const DocView = ({ docContent }) => {
         });
         setMenuList(tMenuList);
     };
-    
-    const findInNestedList = (list, nodeId, node) => {
-        if (list.nodeId === nodeId) {
-            list.slides.push(node);
-            return true;
-        }
-        for (let i = 0; i < list.slides.length; i++) {
-            if (findInNestedList(list.slides[i], nodeId, node)) {
-                return true;
-            }
-        }
-        return false;
+
+    const closeNodes = nodes => {
+        nodes.forEach(item => (item.isOpen = false));
+    };
+
+    const getNodeId = node => {
+        return docSlideList.findIndex(item => item.nodeId === node.nodeId);
+    };
+
+    const getParents = node => {
+        return docSlideList.filter(
+            item => node.nodeId !== item.nodeId && node.nodeId.indexOf(item.nodeId) === 0,
+        );
     };
 
     const navigateToPrev = () => {
@@ -76,7 +94,7 @@ const DocView = ({ docContent }) => {
             nodeId = docSlideList.length - 1;
         }
         closeNodes(getParents(curNode));
-        getParents(docSlideList[nodeId]).forEach(item => item.isOpen = true);
+        getParents(docSlideList[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
         setCurNode(docSlideList[nodeId]);
     };
@@ -87,7 +105,7 @@ const DocView = ({ docContent }) => {
             nodeId = 0;
         }
         closeNodes(getParents(curNode));
-        getParents(docSlideList[nodeId]).forEach(item => item.isOpen = true);
+        getParents(docSlideList[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
         setCurNode(docSlideList[nodeId]);
     };
@@ -146,7 +164,7 @@ const DocView = ({ docContent }) => {
         return nodeTitle;
     };
 
-    const renderNode = (node, key) => {
+    const renderNode = node => {
         const { level, title, sectionTitle } = node;
         let nodeBody = [];
 
@@ -172,23 +190,9 @@ const DocView = ({ docContent }) => {
         if (nodeTitle) nodeBody.push(nodeTitle);
 
         // render content
-        const tNodes = <div key='node-key' dangerouslySetInnerHTML={{ __html: node.content }} />;
+        const tNodes = <div key="node-key" dangerouslySetInnerHTML={{ __html: node.content }} />;
         nodeBody = [...nodeBody, tNodes];
         return nodeBody;
-    };
-
-    const getNodeId = node => {
-        return docSlideList.findIndex(
-            item => item.nodeId === node.nodeId
-        );
-    };
-    
-    const getParents = (node) => {
-        return docSlideList.filter(item => node.nodeId !== item.nodeId && node.nodeId.indexOf(item.nodeId) === 0);
-    };
-    
-    const closeNodes = (nodes) => {
-        nodes.forEach(item => item.isOpen = false);
     };
 
     const renderNavigationList = (item, key) => {
@@ -196,41 +200,44 @@ const DocView = ({ docContent }) => {
         return (
             <React.Fragment key={key}>
                 <li
-                    className={
-                        `nav-item ${curNode.nodeId === item.nodeId
+                    className={`nav-item ${
+                        curNode.nodeId === item.nodeId
                             ? 'active focus'
                             : curNode.nodeId.indexOf(item.nodeId) === 0
-                                ? 'active' : ''}`
-                    }
+                            ? 'active'
+                            : ''
+                    }`}
                     onClick={e => {
-                        let prevNode = docSlideList.find(item => item.nodeId === curNode.nodeId);
+                        const prevNode = docSlideList.find(
+                            listItem => listItem.nodeId === curNode.nodeId,
+                        );
                         if (item.nodeId !== prevNode.nodeId) {
                             prevNode.isOpen = false;
                         }
                         item.isOpen = !item.isOpen;
                         if (item.isOpen) {
                             closeNodes(getParents(curNode));
-                            parents.forEach(item => item.isOpen = true);
+                            parents.forEach(parent => (parent.isOpen = true));
                         }
                         setCurNodeId(getNodeId(item));
                         setCurNode({ ...item, isOpen: item.isOpen });
                         e.stopPropagation();
                     }}
-                    style={{paddingLeft: `${10 * (item.level-1)}px`}}
+                    style={{ paddingLeft: `${10 * (item.level - 1)}px` }}
                 >
                     {item.nodeId}. {item.title}
                 </li>
                 {item.slides && item.isOpen && (
                     <div>
                         <ul>
-                            {item.slides.map((item, index) => {
-                                return renderNavigationList(item, index);
+                            {item.slides.map((slide, index) => {
+                                return renderNavigationList(slide, index);
                             })}
                         </ul>
                     </div>
                 )}
             </React.Fragment>
-        )
+        );
     };
 
     // Set current progress
@@ -283,9 +290,7 @@ const DocView = ({ docContent }) => {
             </div>
             {showNavigationList && (
                 <div className="navigation-container">
-                    <ul>
-                       {menuList.map((item, index) => renderNavigationList(item, index))}
-                    </ul>
+                    <ul>{menuList.map((item, index) => renderNavigationList(item, index))}</ul>
                 </div>
             )}
         </div>
