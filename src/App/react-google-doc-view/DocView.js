@@ -28,14 +28,14 @@ const DocView = ({ docContent }) => {
                     if (slideList[pos].level === level) siblingCount += 1;
                     pos -= 1;
                 }
-                let parentListIndex =
+                let parentNodeId =
                         (pos >= 0 ?
-                            `${slideList[pos].listIndex}.${siblingCount + 1}` : '');
-                let listIndex =
+                            `${slideList[pos].nodeId}.${siblingCount + 1}` : '');
+                let nodeId =
                     index2 === 0 ?
                         (index1 + 1).toString() :
-                            (parentListIndex ? parentListIndex : (index2 + 1).toString());
-                slideList.push({ ...slide, sectionTitle: section.title, listIndex, isOpen: false, slides: [] });
+                            (parentNodeId ? parentNodeId : (index2 + 1).toString());
+                slideList.push({ ...slide, sectionTitle: section.title, nodeId, isOpen: false, slides: [] });
             });
         });
         setDocSlideList(slideList);
@@ -45,10 +45,10 @@ const DocView = ({ docContent }) => {
             if (item.level === 1) {
                 tMenuList.push(item);
             } else {
-                let listIndex = item.listIndex;
-                let pListIndex = listIndex.substr(0, listIndex.length - 2);
+                let nodeId = item.nodeId;
+                let pNodeId = nodeId.substr(0, nodeId.length - 2);
                 for (let i = 0; i < tMenuList.length; i++) {
-                    if (findInNestedList(tMenuList[i], pListIndex, item)) {
+                    if (findInNestedList(tMenuList[i], pNodeId, item)) {
                         break;
                     }
                 }
@@ -57,14 +57,13 @@ const DocView = ({ docContent }) => {
         setMenuList(tMenuList);
     };
     
-    const findInNestedList = (list, listIndex, node) => {
-        if (list.listIndex === listIndex) {
+    const findInNestedList = (list, nodeId, node) => {
+        if (list.nodeId === nodeId) {
             list.slides.push(node);
             return true;
         }
         for (let i = 0; i < list.slides.length; i++) {
-            if (list.slides[i].listIndex === listIndex) {
-                list.slides[i].slides.push(node);
+            if (findInNestedList(list.slides[i], nodeId, node)) {
                 return true;
             }
         }
@@ -76,7 +75,10 @@ const DocView = ({ docContent }) => {
         if (nodeId < 0) {
             nodeId = docSlideList.length - 1;
         }
+        closeNodes(getParents(curNode));
+        getParents(docSlideList[nodeId]).forEach(item => item.isOpen = true);
         setCurNodeId(nodeId);
+        setCurNode(docSlideList[nodeId]);
     };
 
     const navigateToNext = () => {
@@ -84,7 +86,10 @@ const DocView = ({ docContent }) => {
         if (nodeId >= docSlideList.length) {
             nodeId = 0;
         }
+        closeNodes(getParents(curNode));
+        getParents(docSlideList[nodeId]).forEach(item => item.isOpen = true);
         setCurNodeId(nodeId);
+        setCurNode(docSlideList[nodeId]);
     };
 
     const renderTitle = (level, title, key) => {
@@ -141,7 +146,7 @@ const DocView = ({ docContent }) => {
         return nodeTitle;
     };
 
-    const renderNode = node => {
+    const renderNode = (node, key) => {
         const { level, title, sectionTitle } = node;
         let nodeBody = [];
 
@@ -167,25 +172,23 @@ const DocView = ({ docContent }) => {
         if (nodeTitle) nodeBody.push(nodeTitle);
 
         // render content
-        const tNodes = node.content.map((slide, index) => (
-            <div key={index} dangerouslySetInnerHTML={{ __html: slide }} />
-        ));
-        nodeBody = [...nodeBody, ...tNodes];
+        const tNodes = <div key='node-key' dangerouslySetInnerHTML={{ __html: node.content }} />;
+        nodeBody = [...nodeBody, tNodes];
         return nodeBody;
     };
 
     const getNodeId = node => {
         return docSlideList.findIndex(
-            item => item.listIndex === node.listIndex
+            item => item.nodeId === node.nodeId
         );
     };
     
     const getParents = (node) => {
-        return docSlideList.filter(item => node.listIndex.indexOf(item.listIndex) >= 0);
+        return docSlideList.filter(item => node.nodeId !== item.nodeId && node.nodeId.indexOf(item.nodeId) === 0);
     };
     
-    const closeAllNodes = () => {
-        
+    const closeNodes = (nodes) => {
+        nodes.forEach(item => item.isOpen = false);
     };
 
     const renderNavigationList = (item, key) => {
@@ -194,24 +197,28 @@ const DocView = ({ docContent }) => {
             <React.Fragment key={key}>
                 <li
                     className={
-                        `nav-item ${curNode.listIndex === item.listIndex
+                        `nav-item ${curNode.nodeId === item.nodeId
                             ? 'active focus'
-                            : curNode.listIndex.indexOf(item.listIndex) === 0
+                            : curNode.nodeId.indexOf(item.nodeId) === 0
                                 ? 'active' : ''}`
                     }
                     onClick={e => {
-                        closeAllNodes();
+                        let prevNode = docSlideList.find(item => item.nodeId === curNode.nodeId);
+                        if (item.nodeId !== prevNode.nodeId) {
+                            prevNode.isOpen = false;
+                        }
                         item.isOpen = !item.isOpen;
                         if (item.isOpen) {
+                            closeNodes(getParents(curNode));
                             parents.forEach(item => item.isOpen = true);
                         }
                         setCurNodeId(getNodeId(item));
-                        setCurNode({ ...item, isOpen: !item.isOpen });
+                        setCurNode({ ...item, isOpen: item.isOpen });
                         e.stopPropagation();
                     }}
                     style={{paddingLeft: `${10 * (item.level-1)}px`}}
                 >
-                    {item.listIndex}. {item.title}
+                    {item.nodeId}. {item.title}
                 </li>
                 {item.slides && item.isOpen && (
                     <div>

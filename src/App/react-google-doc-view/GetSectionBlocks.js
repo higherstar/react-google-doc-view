@@ -396,7 +396,7 @@ export const getSectionBlocks = data => {
     };
 
     const getSlideContent = startPos => {
-        const leaves = [];
+        let leaves = '';
         let wordCount = 0;
         let videoEnded = false;
         let questionEnded = false;
@@ -417,7 +417,7 @@ export const getSectionBlocks = data => {
                 break;
             }
             wordCount += (params.text && params.text.split(/\s+/).length) || 0;
-            leaves.push(renderToString(renderElements(elementArr[curPos], curPos)));
+            leaves += renderToString(renderElements(elementArr[curPos], curPos));
             curPos += 1;
         }
         return { content: leaves, wordCount, endPos: curPos };
