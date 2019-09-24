@@ -9,7 +9,6 @@ import {
 } from './operations';
 
 export const getSectionBlocks = data => {
-    // console.log('processing data', data);
     const elementArr = data.body.content;
     const { documentStyle } = data;
     let namedStyles = data.namedStyles.styles;
@@ -396,7 +395,7 @@ export const getSectionBlocks = data => {
     };
 
     const getSlideContent = startPos => {
-        let leaves = '';
+        const leaves = [];
         let wordCount = 0;
         let videoEnded = false;
         let questionEnded = false;
@@ -417,10 +416,11 @@ export const getSectionBlocks = data => {
                 break;
             }
             wordCount += (params.text && params.text.split(/\s+/).length) || 0;
-            leaves += renderToString(renderElements(elementArr[curPos], curPos));
+            leaves.push(renderToString(renderElements(elementArr[curPos], curPos)));
             curPos += 1;
         }
-        return { content: leaves, wordCount, endPos: curPos };
+        const content = leaves.join('');
+        return { content, word_count: wordCount, endPos: curPos };
     };
 
     const getSectionList = () => {
@@ -443,7 +443,7 @@ export const getSectionBlocks = data => {
                         ? text
                         : elementArr[curPos + 1].paragraph.elements[0].textRun.content;
                 const newSection = {
-                    title: sectionTitle,
+                    title: sectionTitle.replace(/(\r\n|\n|\r)/gm, ''),
                     type: videoStarted ? 'video' : questionStarted ? 'question' : 'slideshow',
                     slides: [],
                 };
@@ -467,14 +467,14 @@ export const getSectionBlocks = data => {
                         break;
                     }
                     headingNum = getHeadingNum(elementArr[curPos]);
-                    const { content, wordCount, endPos } = getSlideContent(curPos + 1);
+                    const { content, word_count: wordCount, endPos } = getSlideContent(curPos + 1);
                     const slide = {
                         title:
                             headingNum && params.text
                                 ? params.text
                                 : elementArr[curPos + 1].paragraph.elements[0].textRun.content,
                         content,
-                        wordCount,
+                        word_count: wordCount,
                         level: headingNum > 0 ? headingNum : 1,
                     };
                     newSection.slides.push(slide);
@@ -643,7 +643,7 @@ export const getSectionBlocks = data => {
                     if (curTitle === '') {
                         // Start of new section
                         if (element.paragraph) {
-                            curTitle = curText;
+                            curTitle = curText.replace(/(\r\n|\n|\r)/gm, '');
                             curSlideStrLength = 0;
                         }
                     }
@@ -711,16 +711,12 @@ export const getSectionBlocks = data => {
         }
     };
 
-    console.time('ParsingDocContent');
     const frameStyle = getFrameStyle(documentStyle);
     namedStyles = getNamedStyle(namedStyles);
     getSections();
-    console.timeEnd('ParsingDocContent');
 
     // get section list structure
-    console.time('building structure');
     getSectionList();
-    console.timeEnd('building structure');
 
     return {
         docSections: sectionBlocks,
