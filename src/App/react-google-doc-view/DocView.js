@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Progress } from 'react-sweet-progress';
 import 'react-sweet-progress/lib/style.css';
 import './index.css';
@@ -12,9 +12,9 @@ const DocView = ({ docContent }) => {
     const [docSlideList, setDocSlideList] = useState([]);
     const [menuList, setMenuList ] = useState([]);
 
-    const setReadProgress = () => {
+    const setReadProgress = useCallback(() => {
         setProgress(parseInt(docSlideList.length ? (curNodeId / docSlideList.length) * 100 : '0', 10));
-    };
+    }, [docSlideList, curNodeId, setProgress]);
 
     const findInNestedList = (list, nodeId, node) => {
         if (list.nodeId === nodeId) {
@@ -171,9 +171,8 @@ const DocView = ({ docContent }) => {
         // render title
         const nodeTitle = renderTitle(level, title, `title-${curNodeId}-${level}`);
         if (level !== 1) {
-            let tNodeId = curNodeId - 1;
             let tLevel = level;
-            while (tNodeId >= 0 && docSlideList[tNodeId].level > 1) {
+            for (let tNodeId = curNodeId - 1; tNodeId >= 0 && docSlideList[tNodeId].level > 1; tNodeId -= 1) {
                 const tSlide = docSlideList[tNodeId];
                 if (tSlide.level < tLevel) {
                     nodeBody.push(
@@ -182,7 +181,6 @@ const DocView = ({ docContent }) => {
                 }
                 if (tSlide.level > tLevel) break;
                 tLevel = tSlide.level;
-                tNodeId -= 1;
             }
             nodeBody.push(renderTitle(1, sectionTitle, `title-${curNodeId}-1`));
             nodeBody.reverse();

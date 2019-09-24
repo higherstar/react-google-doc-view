@@ -183,9 +183,8 @@ const ViewerContainer = props => {
         // render title
         const nodeTitle = renderTitle(level, title, `title-${curNodeId}-${level}`);
         if (level !== 1) {
-            let tNodeId = curNodeId - 1;
             let tLevel = level;
-            while (tNodeId >= 0 && docSlideList[tNodeId].level > 1) {
+            for (let tNodeId = curNodeId - 1; tNodeId >= 0 && docSlideList[tNodeId].level > 1; tNodeId -= 1) {
                 const tSlide = docSlideList[tNodeId];
                 if (tSlide.level < tLevel) {
                     nodeBody.push(
@@ -194,7 +193,6 @@ const ViewerContainer = props => {
                 }
                 if (tSlide.level > tLevel) break;
                 tLevel = tSlide.level;
-                tNodeId -= 1;
             }
             nodeBody.push(renderTitle(1, sectionTitle, `title-${curNodeId}-1`));
             nodeBody.reverse();
