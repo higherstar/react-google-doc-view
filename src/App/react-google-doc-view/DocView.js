@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Progress } from 'react-sweet-progress';
 import 'react-sweet-progress/lib/style.css';
 import './index.css';
@@ -12,9 +12,9 @@ const DocView = ({ docContent }) => {
     const [docSlideList, setDocSlideList] = useState([]);
     const [menuList, setMenuList ] = useState([]);
 
-    const setReadProgress = useCallback(() => {
-        setProgress(parseInt(docSlideList.length ? (curNodeId / docSlideList.length) * 100 : '0', 10));
-    }, [docSlideList, curNodeId, setProgress]);
+    const setReadProgress = (curPos, totalLen) => {
+        setProgress(parseInt(totalLen ? (curPos / totalLen) * 100 : '0', 10));
+    };
 
     const findInNestedList = (list, nodeId, node) => {
         if (list.nodeId === nodeId) {
@@ -29,9 +29,9 @@ const DocView = ({ docContent }) => {
         return false;
     };
 
-    const getDocSlideList = () => {
+    const getDocSlideList = (sections) => {
         const slideList = [];
-        docSectionStructure.sections.forEach((section, index1) => {
+        sections.forEach((section, index1) => {
             section.slides.forEach((slide, index2) => {
                 const { level } = slide;
                 let pos = slideList.length - 1;
@@ -55,8 +55,6 @@ const DocView = ({ docContent }) => {
                 });
             });
         });
-        setDocSlideList(slideList);
-        setCurNode(slideList[0]);
         const tMenuList = [];
         slideList.forEach(item => {
             if (item.level === 1) {
@@ -71,43 +69,43 @@ const DocView = ({ docContent }) => {
                 }
             }
         });
-        setMenuList(tMenuList);
+        return { slideList, menuList: tMenuList };
     };
 
     const closeNodes = nodes => {
         nodes.forEach(item => (item.isOpen = false));
     };
 
-    const getNodeId = node => {
-        return docSlideList.findIndex(item => item.nodeId === node.nodeId);
+    const getNodeId = (list, node) => {
+        return list.findIndex(item => item.nodeId === node.nodeId);
     };
 
-    const getParents = node => {
-        return docSlideList.filter(
+    const getParents = (list, node) => {
+        return list.filter(
             item => node.nodeId !== item.nodeId && node.nodeId.indexOf(item.nodeId) === 0,
         );
     };
     
-    const navigateToPrev = () => {
+    const navigateToPrev = (list) => {
         let nodeId = curNodeId - 1;
         if (nodeId < 0) {
-            nodeId = docSlideList.length - 1;
+            nodeId = list.length - 1;
         }
-        closeNodes(getParents(curNode));
-        getParents(docSlideList[nodeId]).forEach(item => (item.isOpen = true));
+        closeNodes(getParents(list, curNode));
+        getParents(list, list[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
-        setCurNode(docSlideList[nodeId]);
+        setCurNode(list[nodeId]);
     };
 
-    const navigateToNext = () => {
+    const navigateToNext = (list) => {
         let nodeId = curNodeId + 1;
-        if (nodeId >= docSlideList.length) {
+        if (nodeId >= list.length) {
             nodeId = 0;
         }
-        closeNodes(getParents(curNode));
-        getParents(docSlideList[nodeId]).forEach(item => (item.isOpen = true));
+        closeNodes(getParents(list, curNode));
+        getParents(list, list[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
-        setCurNode(docSlideList[nodeId]);
+        setCurNode(list[nodeId]);
     };
 
     const renderTitle = (level, title, key) => {
@@ -164,7 +162,7 @@ const DocView = ({ docContent }) => {
         return nodeTitle;
     };
 
-    const renderNode = node => {
+    const renderNode = (list, node) => {
         const { level, title, sectionTitle } = node;
         let nodeBody = [];
 
@@ -172,8 +170,8 @@ const DocView = ({ docContent }) => {
         const nodeTitle = renderTitle(level, title, `title-${curNodeId}-${level}`);
         if (level !== 1) {
             let tLevel = level;
-            for (let tNodeId = curNodeId - 1; tNodeId >= 0 && docSlideList[tNodeId].level > 1; tNodeId -= 1) {
-                const tSlide = docSlideList[tNodeId];
+            for (let tNodeId = curNodeId - 1; tNodeId >= 0 && list[tNodeId].level > 1; tNodeId -= 1) {
+                const tSlide = list[tNodeId];
                 if (tSlide.level < tLevel) {
                     nodeBody.push(
                         renderTitle(tSlide.level, tSlide.title, `title-${tNodeId}-${tSlide.level}`),
@@ -193,8 +191,8 @@ const DocView = ({ docContent }) => {
         return nodeBody;
     };
 
-    const renderNavigationList = (item, key) => {
-        const parents = getParents(item);
+    const renderNavigationList = (list, item, key) => {
+        const parents = getParents(list, item);
         return (
             <React.Fragment key={key}>
                 <li
@@ -214,10 +212,10 @@ const DocView = ({ docContent }) => {
                         }
                         item.isOpen = !item.isOpen;
                         if (item.isOpen) {
-                            closeNodes(getParents(curNode));
+                            closeNodes(getParents(list, curNode));
                             parents.forEach(parent => (parent.isOpen = true));
                         }
-                        setCurNodeId(getNodeId(item));
+                        setCurNodeId(getNodeId(list, item));
                         setCurNode({ ...item, isOpen: item.isOpen });
                         e.stopPropagation();
                     }}
@@ -229,7 +227,7 @@ const DocView = ({ docContent }) => {
                     <div>
                         <ul>
                             {item.slides.map((slide, index) => {
-                                return renderNavigationList(slide, index);
+                                return renderNavigationList(list, slide, index);
                             })}
                         </ul>
                     </div>
@@ -240,12 +238,15 @@ const DocView = ({ docContent }) => {
 
     // Set current progress
     useEffect(() => {
-        setReadProgress();
-    }, [curNodeId]);
+        setReadProgress(curNodeId, docSlideList.length);
+    }, [curNodeId, docSlideList]);
 
     // Generate slide list
     useEffect(() => {
-        getDocSlideList();
+        const { slideList, menuList } = getDocSlideList(docSectionStructure.sections);
+        setDocSlideList(slideList);
+        setCurNode(slideList[0]);
+        setMenuList(menuList);
     }, []);
 
     return (
@@ -278,17 +279,17 @@ const DocView = ({ docContent }) => {
                         </div>
                     </div>
                     <div className="doc-view-frame">
-                        {docSlideList.length && renderNode(docSlideList[curNodeId])}
+                        {docSlideList.length && renderNode(docSlideList, docSlideList[curNodeId])}
                     </div>
                     <div className="doc-view-frame-controller">
-                        <div onClick={() => navigateToPrev()}>Previous</div>
-                        <div onClick={() => navigateToNext()}>Next</div>
+                        <div onClick={() => navigateToPrev(docSlideList)}>Previous</div>
+                        <div onClick={() => navigateToNext(docSlideList)}>Next</div>
                     </div>
                 </div>
             </div>
             {showNavigationList && (
                 <div className="navigation-container">
-                    <ul>{menuList.map((item, index) => renderNavigationList(item, index))}</ul>
+                    <ul>{menuList.map((item, index) => renderNavigationList(docSlideList, item, index))}</ul>
                 </div>
             )}
         </div>
