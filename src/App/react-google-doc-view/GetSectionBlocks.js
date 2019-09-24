@@ -402,12 +402,14 @@ export const getSectionBlocks = data => {
         let slideCut = false;
         let curPos = startPos;
         let headingNum = getHeadingNum(elementArr[startPos]);
-        while (
+        for (
+            ;
             !videoEnded &&
             !questionEnded &&
             !slideCut &&
             curPos < elementArr.length &&
-            headingNum < 1
+            headingNum < 1;
+            curPos += 1
         ) {
             const params = getSlideParams(curPos);
             ({ videoEnded, questionEnded, slideCut } = params);
@@ -417,15 +419,13 @@ export const getSectionBlocks = data => {
             }
             wordCount += (params.text && params.text.split(/\s+/).length) || 0;
             leaves.push(renderToString(renderElements(elementArr[curPos], curPos)));
-            curPos += 1;
         }
         const content = leaves.join('');
         return { content, word_count: wordCount, endPos: curPos };
     };
 
     const getSectionList = () => {
-        let curPos = 0;
-        while (curPos < elementArr.length) {
+        for (let curPos = 0; curPos < elementArr.length; curPos += 1) {
             let headingNum = getHeadingNum(elementArr[curPos]);
             const slideParams = getSlideParams(curPos);
             const { text } = slideParams;
@@ -448,7 +448,7 @@ export const getSectionBlocks = data => {
                     slides: [],
                 };
                 if (headingNum < 1) curPos += 1;
-                while (!videoEnded && !questionEnded && !slideCut && curPos < elementArr.length) {
+                for (; !videoEnded && !questionEnded && !slideCut && curPos < elementArr.length; ) {
                     const params = getSlideParams(curPos);
                     ({
                         questionStarted,
@@ -482,7 +482,6 @@ export const getSectionBlocks = data => {
                 }
                 sectionStructure.sections.push(newSection);
             }
-            curPos += 1;
         }
     };
 
