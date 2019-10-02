@@ -17,10 +17,10 @@ const findInNestedList = (list, nodeId, node) => {
     return false;
 };
 
-const getDocSlideList = (sections) => {
+const getDocSlideList = sections => {
     const slideList = [];
-    sections.forEach((section, index1) => {
-        section.slides.forEach((slide, index2) => {
+    sections.forEach((section, sectionIndex) => {
+        section.slides.forEach((slide, slideIndex) => {
             const { level } = slide;
             let pos = slideList.length - 1;
             // get parent index
@@ -32,9 +32,9 @@ const getDocSlideList = (sections) => {
             }
             const parentNodeId = pos >= 0 ? `${slideList[pos].nodeId}.${siblingCount + 1}` : '';
             const nodeId =
-                index2 === 0
-                    ? (index1 + 1).toString()
-                    : parentNodeId || (index2 + 1).toString();
+                slideIndex === 0
+                    ? (sectionIndex + 1).toString()
+                    : parentNodeId || (slideIndex + 1).toString();
             slideList.push({
                 ...slide,
                 sectionTitle: section.title,
@@ -44,21 +44,22 @@ const getDocSlideList = (sections) => {
             });
         });
     });
-    const tMenuList = [];
+
+    const sectionMenuList = [];
     slideList.forEach(item => {
         if (item.level === 1) {
-            tMenuList.push(item);
+            sectionMenuList.push(item);
         } else {
             const { nodeId } = item;
-            const pNodeId = nodeId.substr(0, nodeId.length - 2);
-            for (let i = 0; i < tMenuList.length; i += 1) {
-                if (findInNestedList(tMenuList[i], pNodeId, item)) {
+            const childNodeId = nodeId.substr(0, nodeId.length - 2);
+            for (let i = 0; i < sectionMenuList.length; i += 1) {
+                if (findInNestedList(sectionMenuList[i], childNodeId, item)) {
                     break;
                 }
             }
         }
     });
-    return { slideList, menuList: tMenuList };
+    return { slideList, menuList: sectionMenuList };
 };
 
 const closeNodes = nodes => {
@@ -77,84 +78,48 @@ const getParents = (list, node) => {
 
 const renderTitle = (level, title, key) => {
     let nodeTitle = '';
-    
-    switch (level) {
-        case 1:
-            nodeTitle = (
-                <h1 key={key} style={{ fontSize: '32px' }}>
-                    {title}
-                </h1>
-            );
-            break;
-        case 2:
-            nodeTitle = (
-                <h2 key={key} style={{ fontSize: '24px' }}>
-                    {title}
-                </h2>
-            );
-            break;
-        case 3:
-            nodeTitle = (
-                <h3 key={key} style={{ fontSize: '20px' }}>
-                    {title}
-                </h3>
-            );
-            break;
-        case 4:
-            nodeTitle = (
-                <h4 key={key} style={{ fontSize: '18px' }}>
-                    {title}
-                </h4>
-            );
-            break;
-        case 5:
-            nodeTitle = (
-                <h5 key={key} style={{ fontSize: '16px' }}>
-                    {title}
-                </h5>
-            );
-            break;
-        case 6:
-            nodeTitle = (
-                <h6 key={key} style={{ fontSize: '14px' }}>
-                    {title}
-                </h6>
-            );
-            break;
-        
-        default:
-            nodeTitle = '';
-            break;
+    const fontSizes = ['32px', '24px', '20px', '18px', '16px', '14px'];
+
+    if (level) {
+        nodeTitle = React.createElement(
+            `h${level}`,
+            {
+                style: { fontSize: fontSizes[level] },
+                key,
+            },
+            title,
+        );
     }
+
     return nodeTitle;
 };
 
 const renderNode = (list, node, curNodeId) => {
     const { level, title, sectionTitle } = node;
     let nodeBody = [];
-    
+
     // render title
     const nodeTitle = renderTitle(level, title, `title-${curNodeId}-${level}`);
     if (level !== 1) {
-        let tLevel = level;
-        for (let tNodeId = curNodeId - 1; tNodeId >= 0 && list[tNodeId].level > 1; tNodeId -= 1) {
-            const tSlide = list[tNodeId];
-            if (tSlide.level < tLevel) {
+        let currentLevel = level;
+        for (let nodeId = curNodeId - 1; nodeId >= 0 && list[nodeId].level > 1; nodeId -= 1) {
+            const slide = list[nodeId];
+            if (slide.level < currentLevel) {
                 nodeBody.push(
-                    renderTitle(tSlide.level, tSlide.title, `title-${tNodeId}-${tSlide.level}`),
+                    renderTitle(slide.level, slide.title, `title-${nodeId}-${slide.level}`),
                 );
             }
-            if (tSlide.level > tLevel) break;
-            tLevel = tSlide.level;
+            if (slide.level > currentLevel) break;
+            currentLevel = slide.level;
         }
         nodeBody.push(renderTitle(1, sectionTitle, `title-${curNodeId}-1`));
         nodeBody.reverse();
     }
     if (nodeTitle) nodeBody.push(nodeTitle);
-    
+
     // render content
-    const tNodes = <div key="node-key" dangerouslySetInnerHTML={{ __html: node.content }} />;
-    nodeBody = [...nodeBody, tNodes];
+    const nodeContent = <div key="node-key" dangerouslySetInnerHTML={{ __html: node.content }} />;
+    nodeBody = [...nodeBody, nodeContent];
     return nodeBody;
 };
 
@@ -166,5 +131,5 @@ export {
     getNodeId,
     getParents,
     renderTitle,
-    renderNode
-}
+    renderNode,
+};
