@@ -9,7 +9,16 @@ import { doStartLoading, doStopLoading } from '../App/operations';
 
 // Presentation Components
 import DocViewer from '../../components/DocViewer';
-import { closeNodes, getDocSlideList, getNodeId, getParents, getReadProgress, renderNode } from './viewer';
+
+// Viewer Helpers
+import {
+    closeNodes,
+    getDocSlideList,
+    getNodeId,
+    getParents,
+    getReadProgress,
+    renderNode,
+} from './viewer';
 
 // Main Component
 const ViewerContainer = props => {
@@ -24,31 +33,31 @@ const ViewerContainer = props => {
     const [progress, setProgress] = useState(0);
     const [docSlideList, setDocSlideList] = useState([]);
     const [menuList, setMenuList] = useState([]);
-    
-    const navigateToPrev = (list) => {
+
+    const navigateToPrev = () => {
         let nodeId = curNodeId - 1;
         if (nodeId < 0) {
-            nodeId = list.length - 1;
+            nodeId = docSlideList.length - 1;
         }
-        closeNodes(getParents(list, curNode));
-        getParents(list, list[nodeId]).forEach(item => (item.isOpen = true));
+        closeNodes(getParents(docSlideList, curNode));
+        getParents(docSlideList, docSlideList[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
-        setCurNode(list[nodeId]);
+        setCurNode(docSlideList[nodeId]);
     };
-    
-    const navigateToNext = (list) => {
+
+    const navigateToNext = () => {
         let nodeId = curNodeId + 1;
-        if (nodeId >= list.length) {
+        if (nodeId >= docSlideList.length) {
             nodeId = 0;
         }
-        closeNodes(getParents(list, curNode));
-        getParents(list, list[nodeId]).forEach(item => (item.isOpen = true));
+        closeNodes(getParents(docSlideList, curNode));
+        getParents(docSlideList, docSlideList[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
-        setCurNode(list[nodeId]);
+        setCurNode(docSlideList[nodeId]);
     };
-    
-    const renderNavigationList = (list, item, key, curNode) => {
-        const parents = getParents(list, item);
+
+    const renderNavigationList = (item, key) => {
+        const parents = getParents(docSlideList, item);
         return (
             <React.Fragment key={key}>
                 <li
@@ -58,9 +67,9 @@ const ViewerContainer = props => {
                             : curNode.nodeId.indexOf(item.nodeId) === 0
                             ? 'active'
                             : ''
-                        }`}
+                    }`}
                     onClick={e => {
-                        const prevNode = list.find(
+                        const prevNode = docSlideList.find(
                             listItem => listItem.nodeId === curNode.nodeId,
                         );
                         if (item.nodeId !== prevNode.nodeId) {
@@ -68,10 +77,10 @@ const ViewerContainer = props => {
                         }
                         item.isOpen = !item.isOpen;
                         if (item.isOpen) {
-                            closeNodes(getParents(list, curNode));
+                            closeNodes(getParents(docSlideList, curNode));
                             parents.forEach(parent => (parent.isOpen = true));
                         }
-                        setCurNodeId(getNodeId(list, item));
+                        setCurNodeId(getNodeId(docSlideList, item));
                         setCurNode({ ...item, isOpen: item.isOpen });
                         e.stopPropagation();
                     }}
@@ -83,7 +92,7 @@ const ViewerContainer = props => {
                     <div>
                         <ul>
                             {item.slides.map((slide, index) => {
-                                return renderNavigationList(list, slide, index, curNode);
+                                return renderNavigationList(slide, index);
                             })}
                         </ul>
                     </div>
@@ -91,19 +100,21 @@ const ViewerContainer = props => {
             </React.Fragment>
         );
     };
-    
+
     // Set current progress
     useEffect(() => {
         setProgress(getReadProgress(curNodeId, docSlideList.length));
-    }, [curNodeId, docSlideList]);
-    
+    }, [setProgress, getReadProgress, curNodeId, docSlideList]);
+
     // Generate slide list
     useEffect(() => {
-        const { slideList, menuList } = getDocSlideList(docSectionStructure.sections);
+        const { slideList, menuList: updatedMenuList } = getDocSlideList(
+            docSectionStructure.sections,
+        );
         setDocSlideList(slideList);
         setCurNode(slideList[0]);
-        setMenuList(menuList);
-    }, []);
+        setMenuList(updatedMenuList);
+    }, [getDocSlideList, setDocSlideList, setCurNode, setMenuList]);
 
     return (
         <DocViewer
@@ -120,7 +131,7 @@ const ViewerContainer = props => {
             renderTOC={renderNavigationList}
             menuList={menuList}
         >
-            {docSlideList.length > 0 && renderNode(docSlideList[curNodeId])}
+            {docSlideList.length > 0 && renderNode(docSlideList, docSlideList[curNodeId])}
         </DocViewer>
     );
 };
