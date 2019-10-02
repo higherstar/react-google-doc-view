@@ -87,13 +87,27 @@ const ViewerContainer = props => {
                         if (item.nodeId !== prevNode.nodeId) {
                             prevNode.isOpen = false;
                         }
+                        // find non-empty slide
+                        let targetNodeId = getNodeId(docSlideList, item);
+                        for (let i = targetNodeId;; i += 1) {
+                            if (i >= docSlideList.length) {
+                                break;
+                            }
+                            if (docSlideList[i].content) {
+                                targetNodeId = i;
+                                break;
+                            }
+                        }
+                        let targetItem = docSlideList[targetNodeId];
+                        let parents = getParents(docSlideList, targetItem);
                         item.isOpen = !item.isOpen;
                         if (item.isOpen) {
                             closeNodes(getParents(docSlideList, curNode));
                             parents.forEach(parent => (parent.isOpen = true));
                         }
-                        setCurNodeId(getNodeId(docSlideList, item));
-                        setCurNode({ ...item, isOpen: item.isOpen });
+    
+                        setCurNodeId(targetNodeId);
+                        setCurNode({ ...targetItem, isOpen: item.isOpen });
                         e.stopPropagation();
                     }}
                     style={{ paddingLeft: `${10 * (item.level - 1)}px` }}
