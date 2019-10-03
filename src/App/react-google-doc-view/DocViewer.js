@@ -69,7 +69,6 @@ const ViewerContainer = props => {
     };
 
     const renderNavigationList = (item, key) => {
-        const parents = getParents(docSlideList, item);
         return (
             <React.Fragment key={key}>
                 <li
