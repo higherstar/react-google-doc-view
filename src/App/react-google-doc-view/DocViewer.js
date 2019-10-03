@@ -133,7 +133,7 @@ const ViewerContainer = props => {
 
     // Generate slide list
     useEffect(() => {
-        const { slideList, menuList: updatedMenuList } = getDocSlideList(
+        const { slideList, updatedMenuList } = getDocSlideList(
             docSectionStructure.sections,
         );
         setDocSlideList(slideList);
