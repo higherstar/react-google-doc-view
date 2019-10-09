@@ -133,7 +133,7 @@ const ViewerContainer = props => {
 
     // Generate slide list
     useEffect(() => {
-        const { slideList, updatedMenuList } = getDocSlideList(
+        const { slideList, menuList: updatedMenuList } = getDocSlideList(
             docSectionStructure.sections,
         );
         setDocSlideList(slideList);
@@ -156,7 +156,7 @@ const ViewerContainer = props => {
             renderTOC={renderNavigationList}
             menuList={menuList}
         >
-            {docSlideList.length > 0 && renderNode(docSlideList, docSlideList[curNodeId])}
+            {docSlideList.length > 0 && renderNode(docSlideList, docSlideList[curNodeId], curNodeId)}
         </DocViewer>
     );
 };
