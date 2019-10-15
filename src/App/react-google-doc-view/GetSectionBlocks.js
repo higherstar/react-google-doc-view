@@ -377,7 +377,9 @@ export const getSectionBlocks = data => {
             element.paragraph &&
             element.paragraph.elements[0] &&
             element.paragraph.elements[0].textRun &&
-            element.paragraph.elements[0].textRun.content;
+            element.paragraph.elements[0].textRun.content
+            ? element.paragraph.elements[0].textRun.content
+            : '';
     };
     
     const getSlideParams = element => {
@@ -524,7 +526,7 @@ export const getSectionBlocks = data => {
                 const questionStarted = elementStr.indexOf('[QUESTIONHEADER]') !== -1;
                 const questionEnded = elementStr.indexOf('[QUESTIONBOTTOM]') !== -1;
                 const isSlideCut = elementStr.indexOf('[SLIDECUT]') !== -1;
-                const curText = getTextFromElement(element) || '';
+                const curText = getTextFromElement(element);
 
                 if (videoStarted) {
                     /**
@@ -571,6 +573,18 @@ export const getSectionBlocks = data => {
                     curQuestionCount = 0;
                     isBlockFinished = false;
                 } else if (questionEnded) {
+                    /**
+                     * question title validation
+                     */
+                    if (!curTitle) {
+                        addError(
+                            'Tag',
+                            'Question name is empty',
+                            'hard',
+                            curTitle
+                        );
+                        break;
+                    }
                     /**
                      * SLIDECUT after QUESTIONBOTTOM inspection
                      */

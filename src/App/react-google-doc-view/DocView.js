@@ -23,6 +23,9 @@ const DocView = ({ docContent }) => {
     const [menuList, setMenuList ] = useState([]);
     
     const navigateToPrev = () => {
+        if (docSlideList.length < 1) {
+            return;
+        }
         let nodeId = 0;
         for (let i = curNodeId - 1;; i -= 1) {
             if (i < 0) {
@@ -40,6 +43,9 @@ const DocView = ({ docContent }) => {
     };
 
     const navigateToNext = () => {
+        if (docSlideList.length < 1) {
+            return;
+        }
         let nodeId = 0;
         for (let i = curNodeId + 1;; i += 1) {
             if (i >= docSlideList.length) {
@@ -135,10 +141,10 @@ const DocView = ({ docContent }) => {
                 <div className="error-warning-container">
                     {errors.map((error, index) => (
                         <div key={`error-${index}`}>
+                            <div>type: {error.type}</div>
                             <div>action: {error.action}</div>
                             <div>context: {error.context}</div>
                             <div>message: {error.message}</div>
-                            <div>type: {error.type}</div>
                         </div>
                     ))}
                 </div>
