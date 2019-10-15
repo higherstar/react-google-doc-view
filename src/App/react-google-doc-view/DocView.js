@@ -14,7 +14,7 @@ import {
 import './index.css';
 
 const DocView = ({ docContent }) => {
-    const { docSectionStructure } = docContent;
+    const { docSectionStructure, errors } = docContent;
     const [curNodeId, setCurNodeId] = useState(0);
     const [curNode, setCurNode] = useState({});
     const [showNavigationList, setShowNavigationList] = useState(false);
@@ -124,7 +124,6 @@ const DocView = ({ docContent }) => {
         const { slideList, updatedMenuList } = getDocSlideList(
             docSectionStructure.sections,
         );
-        console.log(slideList, updatedMenuList);
         setDocSlideList(slideList);
         setCurNode(slideList[0]);
         setMenuList(updatedMenuList);
@@ -133,6 +132,16 @@ const DocView = ({ docContent }) => {
     return (
         <div className="doc-view-container">
             <div className="page-container">
+                <div className="error-warning-container">
+                    {errors.map((error, index) => (
+                        <div key={`error-${index}`}>
+                            <div>action: {error.action}</div>
+                            <div>context: {error.context}</div>
+                            <div>message: {error.message}</div>
+                            <div>type: {error.type}</div>
+                        </div>
+                    ))}
+                </div>
                 <div className="doc-view-frame-container">
                     <div className="doc-view-frame-header">
                         <div className="doc-view-progress">
