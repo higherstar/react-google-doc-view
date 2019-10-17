@@ -141,7 +141,7 @@ const ViewerContainer = props => {
             nextSlide={navigateToNext}
             prevSlide={navigateToPrev}
             progress={progress}
-            curNodeId={curNodeId}
+            curNodeId={curNodeId}   // if there's no slide to navigate, it becomes -1
             showTOC={showNavigationList}
             setShowTOC={setShowNavigationList}
             renderTOC={renderNavigationList}

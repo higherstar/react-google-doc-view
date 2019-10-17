@@ -165,10 +165,12 @@ const DocView = ({ docContent }) => {
                             : null
                         }
                     </div>
-                    <div className="doc-view-frame-controller">
-                        <div onClick={() => navigateToPrev()}>Previous</div>
-                        <div onClick={() => navigateToNext()}>Next</div>
-                    </div>
+                    {docSlideList.length && curNodeId >= 0 ? (
+                        <div className="doc-view-frame-controller">
+                            <div onClick={() => navigateToPrev()}>Previous</div>
+                            <div onClick={() => navigateToNext()}>Next</div>
+                        </div>
+                    ) : null}
                 </div>
             </div>
             {showNavigationList && (
@@ -179,4 +181,5 @@ const DocView = ({ docContent }) => {
         </div>
     );
 };
+
 export default DocView;
