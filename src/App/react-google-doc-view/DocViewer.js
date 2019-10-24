@@ -51,6 +51,10 @@ const ViewerContainer = props => {
             return;
         }
         const nodeId = getNonEmptyNodeId(curNodeId + 1, +1, docSlideList);
+        if (nodeId < curNodeId) {
+            // finish app on the last slide
+            return;
+        }
         closeNodes(getParents(docSlideList, curNode));
         getParents(docSlideList, docSlideList[nodeId]).forEach(item => (item.isOpen = true));
         setCurNodeId(nodeId);
