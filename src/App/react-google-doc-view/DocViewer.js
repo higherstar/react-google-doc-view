@@ -142,6 +142,9 @@ const ViewerContainer = props => {
         const { slideList, menuList: updatedMenuList } = getDocSlideList(
             docSectionStructure.sections,
         );
+        if (slideList.length === 1) {
+            props.finishReading();
+        }
         const nodeId = getNonEmptyNodeId(0, +1, slideList);
         setCurNodeId(nodeId);
         setCurNode(slideList[nodeId]);

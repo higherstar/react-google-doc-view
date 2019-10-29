@@ -126,6 +126,9 @@ const DocView = ({ docContent, finishReading }) => {
         const { slideList, updatedMenuList } = getDocSlideList(
             docSectionStructure.sections,
         );
+        if (slideList.length === 1) {
+            finishReading();
+        }
         const nodeId = getNonEmptyNodeId(0, +1, slideList);
         setCurNodeId(nodeId);
         setCurNode(slideList[nodeId]);
