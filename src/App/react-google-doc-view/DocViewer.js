@@ -59,6 +59,9 @@ const ViewerContainer = props => {
     const navigateToNext = () => {
         if (docSlideList.length < 1 || curNodeId === -1) {
             return;
+        } else if (docSlideList.length === 1) {
+            props.finishReading();
+            return;
         }
         const nodeId = getNonEmptyNodeId(curNodeId + 1, +1, docSlideList);
         if (nodeId < curNodeId) {
